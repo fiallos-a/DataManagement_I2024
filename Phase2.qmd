@@ -1,0 +1,6 @@
+---
+title: "Data Management Project: Phase 2"
+author: "Andrés Fiallos & Blandine Ledoux"
+format: html
+editor: visual
+---
