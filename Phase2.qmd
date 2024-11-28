@@ -4,3 +4,85 @@ author: "Andrés Fiallos & Blandine Ledoux"
 format: html
 editor: visual
 ---
+
+# Estimating the effects of connectivity in intra-EU digitally deliverable trade in services
+
+```{r}
+library(vroom)
+library(data.table)
+library(here)
+library(eurostat)
+```
+
+## Data 
+
+In this project, we will merge four different datasets. The following lines of code will download and save the necessary datasets to your computer. If the files already exist, they will be loaded.
+
+### International Trade in Services - OECD
+
+The following data set is around 1.11gb, hence it takes sometime to download. Allow it around 5 minutes.
+
+```{r}
+
+source <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_BOP@DF_TIS,1.0?format=csv"
+local_name <- "trade_data.csv"
+local_dir <- "raw_data"
+## Check if the directory exists, otherwise create
+if (!dir.exists(here(local_dir))) {
+  ## create the directory if needed
+  dir.create(here(local_dir)) 
+}
+## Check if file exists, otherwise download 
+if (!file.exists(here(local_dir, local_name))) {
+  ## we need to download it
+  trade_data <- vroom(source)
+  ## let's save the file to avoid useless downloading
+  fwrite(trade_data, here(local_dir, local_name), sep = ",")
+} else {
+  ## we need only to load it
+  trade_data <- fread(here(local_dir, local_name))
+}
+
+```
+
+### Annual GDP - Eurostat
+
+```{r}
+source <- "tec00001"
+local_name <- "gdp_eu.csv"
+local_dir <- "raw_data"
+
+## Check if file exists, otherwise download 
+if (!file.exists(here(local_dir, local_name))) {
+  ## we need to download it
+  gdp_eu <- get_eurostat(source, time_format = "num", stringsAsFactors = TRUE)
+  
+  ## let's save the file to avoid useless downloading
+  fwrite(gdp_eu, here(local_dir, local_name), sep = ",")
+} else {
+  ## we need only to load it
+  gdp_eu <- fread(here(local_dir, local_name))
+}
+```
+
+### Internet Coverage - Eurostat
+
+```{r}
+source <- "isoc_cbs"
+local_name <- "internet_eu.csv"
+local_dir <- "raw_data"
+
+## Check if file exists, otherwise download 
+if (!file.exists(here(local_dir, local_name))) {
+  ## we need to download it
+  internet_eu <- get_eurostat(source, time_format = "num", stringsAsFactors = TRUE)
+  
+  ## let's save the file to avoid useless downloading
+  fwrite(internet_eu, here(local_dir, local_name), sep = ",")
+} else {
+  ## we need only to load it
+  internet_eu <- fread(here(local_dir, local_name))
+}
+```
+
+### Gravity model - CEPPI
