@@ -9,12 +9,11 @@ editor: visual
 
 ```{r}
 library(vroom)
-library(data.table)
-library(here)
 library(eurostat)
+library(here)
 ```
 
-## Data 
+## Data
 
 In this project, we will merge four different datasets. The following lines of code will download and save the necessary datasets to your computer. If the files already exist, they will be loaded.
 
@@ -37,10 +36,10 @@ if (!file.exists(here(local_dir, local_name))) {
   ## we need to download it
   trade_data <- vroom(source)
   ## let's save the file to avoid useless downloading
-  fwrite(trade_data, here(local_dir, local_name), sep = ",")
+  vroom_write(trade_data, here(local_dir, local_name), delim = ",")
 } else {
   ## we need only to load it
-  trade_data <- fread(here(local_dir, local_name))
+  trade_data <- vroom(here(local_dir, local_name))
 }
 
 ```
@@ -58,10 +57,10 @@ if (!file.exists(here(local_dir, local_name))) {
   gdp_eu <- get_eurostat(source, time_format = "num", stringsAsFactors = TRUE)
   
   ## let's save the file to avoid useless downloading
-  fwrite(gdp_eu, here(local_dir, local_name), sep = ",")
+  vroom_write(gdp_eu, here(local_dir, local_name), delim = ",")
 } else {
   ## we need only to load it
-  gdp_eu <- fread(here(local_dir, local_name))
+  gdp_eu <- vroom(here(local_dir, local_name))
 }
 ```
 
@@ -74,15 +73,38 @@ local_dir <- "raw_data"
 
 ## Check if file exists, otherwise download 
 if (!file.exists(here(local_dir, local_name))) {
-  ## we need to download it
   internet_eu <- get_eurostat(source, time_format = "num", stringsAsFactors = TRUE)
   
-  ## let's save the file to avoid useless downloading
-  fwrite(internet_eu, here(local_dir, local_name), sep = ",")
+  vroom_write(internet_eu, here(local_dir, local_name), delim = ",")
 } else {
-  ## we need only to load it
-  internet_eu <- fread(here(local_dir, local_name))
+  internet_eu <- vroom(here(local_dir, local_name))
 }
 ```
 
 ### Gravity model - CEPPI
+
+```{r}
+local_name <- "gravity_data.csv"
+local_dir <- "raw_data"
+
+if (!file.exists(here(local_dir, local_name))) {
+  url <- "https://www.cepii.fr/DATA_DOWNLOAD/gravity/data/Gravity_csv_V202211.zip"
+  
+  download.file(url, destfile = here(local_dir,"Gravity_csv_V202211.zip"))
+  unzip(here(local_dir,"Gravity_csv_V202211.zip"), exdir = here(local_dir,"gravity_data"))
+  
+  csv_files <- list.files(here(local_dir,"gravity_data"), full.names = TRUE)
+  print(csv_files)
+  
+  #We need to read second element
+  gravity_data <- vroom(csv_files[2]) 
+
+  vroom_write(gravity_data, here(local_dir, local_name), delim = ",")
+  
+  unlink(here(local_dir,"Gravity_csv_V202211.zip"), recursive = TRUE)
+  unlink(here(local_dir,"gravity_data"), recursive = TRUE)
+  
+} else {
+  gravity_data <- vroom(here(local_dir, local_name))
+}
+```
