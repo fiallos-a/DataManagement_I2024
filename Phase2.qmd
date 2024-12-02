@@ -7,26 +7,24 @@ editor: visual
 
 # Estimating the effects of connectivity in intra-EU digitally deliverable trade in services
 
-```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+This script uses the following libraries:
 
+```{r}
 library(vroom)
 library(eurostat)
 library(here)
 library(tidyverse)
 ```
 
-## Data
+## 1. Data download
 
-In this project, we will merge four different datasets. The following lines of code will download and save the necessary datasets to your computer. If the files already exist, they will be loaded.
+In this project, we will merge four different datasets. This section downloads and saves the necessary datasets to your computer. If the files already exist, they will be loaded.
 
 ### International Trade in Services - OECD
 
-The following data set is around 1.11gb, hence it takes sometime to download. Allow it around 5 minutes.
+The following data set is around 1.11gb, hence it takes sometime to download. Allow it around 5 minutes to download.
 
 ```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
-
 source <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_BOP@DF_TIS,1.0?format=csv"
 local_name <- "trade_data.csv"
 local_dir <- "raw_data"
@@ -48,12 +46,9 @@ if (!file.exists(here(local_dir, local_name))) {
 
 ```
 
-### Annual GDP - Eurostat
+### GDP per capita - Eurostat
 
 ```{r}
-
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
-
 source <- "tec00001"
 local_name <- "gdp_eu.csv"
 local_dir <- "raw_data"
@@ -75,9 +70,6 @@ if (!file.exists(here(local_dir, local_name))) {
 ### Internet Coverage - Eurostat
 
 ```{r}
-
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
-
 source <- "isoc_cbs"
 local_name <- "internet_eu.csv"
 local_dir <- "raw_data"
@@ -95,10 +87,9 @@ if (!file.exists(here(local_dir, local_name))) {
 
 ### Gravity model - CEPPI
 
-```{r}
+This dataset is downloaded as a ZIP file containing several files. The code below extracts the ZIP file, identifies the relevant file, saves it, and then deletes both the ZIP file and the other extracted files. Keeping only the relevant dataset.
 
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
- 
+```{r}
 local_name <- "gravity_data.csv"
 local_dir <- "raw_data"
 
@@ -125,9 +116,9 @@ if (!file.exists(here(local_dir, local_name))) {
 
 ```
 
-## Data cleaning
+## 2. Units of analysis: countries and service categories 
 
-#### Countries in the study
+### Countries in the study
 
 This project aims to study the digitally deliverable trade in services between member countries of the European Union. As of the date of this project, the European Union consists of 27 countries. Below is a table listing the countries included in this study, along with their corresponding ISO3 and ISO2 codes.
 
@@ -199,7 +190,9 @@ ebops_codes <- c("SF", "SG", "SH", "SI", "SJ", "SK1")
 
 ```
 
-### Gravity_data dataset
+## 3. Data Cleaning and merge 
+
+### Gravity model - CEPPI
 
 This dataset contains trade fixed costs. The cleaning process involves filtering the data to include only the countries relevant to the study, selecting the appropriate time period (from 2013 to 2023), and retaining the following variables:
 
@@ -247,12 +240,12 @@ gravity_data <- gravity_data %>%
 
 ```
 
-### Trade_data
+### International Trade in Services - OECD
+
+Based on the definition of digitally deliverable services provided in the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023), we are using OECD trade in services statistics to calculate digitally deliverable services by aggregating the relevant individual service categories into a single value. Additionally, we are retaining only the variables pertinent to our study and filtering the data to include only the countries under analysis.
 
 ```{r}
 
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
- 
 trade_data_digitally <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
@@ -266,6 +259,11 @@ trade_data_digitally <- trade_data_digitally %>%
   summarise(OBS_VALUE = sum(OBS_VALUE, na.rm = TRUE)) |>
   ungroup()
 
+```
+
+Additionally, we are computing a second variable representing the total bilateral services trade by filtering the service category 'S' (Total Services in EBOPS). An adjusted version of this variable will be used when estimating the gravity model.
+
+```{r}
 trade_data <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
@@ -274,6 +272,11 @@ trade_data <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTI
                                   COUNTERPART_AREA %in% eu_iso3,
                                   TIME_PERIOD %in% c(2013:2023))
 
+```
+
+To finalize the cleaning of the trade data, we are renaming the variables to ensure compatibility with the other datasets, keeping in mind the need to merge all the datasets we are working with.
+
+```{r}
 trade_data <- trade_data |>
   rename(
     reporter = REF_AREA,
@@ -294,13 +297,13 @@ trade_data_digitally <- trade_data_digitally |>
 
 ```
 
-### GDP
+### GDP per capita - Eurostat
+
+The GDP per capita is included in our dataset when the variable unit is `CP_EUR_HAB`. During the data cleaning process, we filter the data to include only the relevant countries for the study, select the appropriate time period, and ensure that we are working with the correct category of the variable unit.
 
 ```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
-
 #Visual inspection
-table(gdp_eu$unit)
+#table(gdp_eu$unit)
 
 gdp_eu <- gdp_eu |> filter(geo %in% eu_iso2,
                            unit == "CP_EUR_HAB",
@@ -310,11 +313,11 @@ gdp_eu <- gdp_eu |> filter(geo %in% eu_iso2,
 
 ```
 
-### Internet coverage
+### Internet Coverage - Eurostat
+
+Similar to the case of GDP per capita, the internet variable we are working with is included in our dataset when `inet_spd == "MBPS_GT100"`, which captures the coverage of high-speed internet in EU countries. During the data cleaning process, we filter the data to include only the relevant countries for the study, select the appropriate time period, and ensure that we are using the correct category for the variable unit.
 
 ```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
-
 #Visual inspection
 # table(internet_eu$unit)
 # table(internet_eu$inet_spd)
@@ -328,6 +331,10 @@ internet_eu <- internet_eu |> filter(geo %in% eu_iso2,
 
 ```
 
+### Mapping EU country codes to SDMX country codes 
+
+This section describes the process of mapping the ISO country codes used for EU member states to their corresponding SDMX (Statistical Data and Metadata Exchange) country codes. This mapping ensures consistency and compatibility between datasets, facilitating the merge in the next step.
+
 ```{r}
 iso_lookup <- data.frame(iso2 = eu_iso2, iso3 = eu_iso3)
 
@@ -336,7 +343,6 @@ gdp_eu_reporter <- gdp_eu %>%
   mutate(reporter = iso3) |>
   select(-iso3,-geo) |>
   rename(gdppc_reporter = values)
-
 
 gdp_eu_partner<- gdp_eu %>%
   left_join(iso_lookup, by = c("geo" = "iso2")) |>
