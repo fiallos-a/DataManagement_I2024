@@ -8,6 +8,8 @@ editor: visual
 # Estimating the effects of connectivity in intra-EU digitally deliverable trade in services
 
 ```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
 library(vroom)
 library(eurostat)
 library(here)
@@ -23,6 +25,7 @@ In this project, we will merge four different datasets. The following lines of c
 The following data set is around 1.11gb, hence it takes sometime to download. Allow it around 5 minutes.
 
 ```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
 
 source <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_BOP@DF_TIS,1.0?format=csv"
 local_name <- "trade_data.csv"
@@ -48,6 +51,9 @@ if (!file.exists(here(local_dir, local_name))) {
 ### Annual GDP - Eurostat
 
 ```{r}
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
 source <- "tec00001"
 local_name <- "gdp_eu.csv"
 local_dir <- "raw_data"
@@ -63,11 +69,15 @@ if (!file.exists(here(local_dir, local_name))) {
   ## we need only to load it
   gdp_eu <- vroom(here(local_dir, local_name))
 }
+
 ```
 
 ### Internet Coverage - Eurostat
 
 ```{r}
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
 source <- "isoc_cbs"
 local_name <- "internet_eu.csv"
 local_dir <- "raw_data"
@@ -80,11 +90,15 @@ if (!file.exists(here(local_dir, local_name))) {
 } else {
   internet_eu <- vroom(here(local_dir, local_name))
 }
+
 ```
 
 ### Gravity model - CEPPI
 
 ```{r}
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+ 
 local_name <- "gravity_data.csv"
 local_dir <- "raw_data"
 
@@ -108,6 +122,7 @@ if (!file.exists(here(local_dir, local_name))) {
 } else {
   gravity_data <- vroom(here(local_dir, local_name))
 }
+
 ```
 
 ## Data cleaning
@@ -118,6 +133,7 @@ This project aims to study the digitally deliverable trade in services between m
 
 | Country Name | ISO3 | ISO2 |
 |--------------|------|------|
+| Austria      | AUT  | AT   |
 | Belgium      | BEL  | BE   |
 | Bulgaria     | BGR  | BG   |
 | Croatia      | HRV  | HR   |
@@ -156,7 +172,7 @@ These statistics are compiled by aggregating relevant products available in inte
 The table below contains the service categories included as digitally deliverable services based on the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023).
 
 | Service Category | EBOPS Category Code |
-|-----------------------------------------------------|-------------------|
+|----------------------------------------------------|--------------------|
 | Insurance and pension services | SF |
 | Financial services | SG |
 | Charges for the use of intellectual property n.i.e. | SH |
@@ -164,16 +180,18 @@ The table below contains the service categories included as digitally deliverabl
 | Other business services n.i.e. | SJ |
 | Audio-visual and related services | SK1 |
 
-##### Parameters
+### Some parameters
 
-Based on the information above, find the parameters:
+Based on the information above, find the parameters for the data cleaning:
 
 ```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
 eu_iso3 <- c("AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN",
              "FRA", "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX" 
              ,"MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE")
 
-eu_iso2 <- c("BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", 
+eu_iso2 <- c("AT","BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", 
           "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", 
           "PT", "RO", "SK", "SI", "ES", "SE")
 
@@ -198,6 +216,8 @@ This dataset contains trade fixed costs. The cleaning process involves filtering
 -   comlang_ethno
 
 ```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
 gravity_data<- gravity_data |>
   select(year, country_id_o, country_id_d, iso3_o, iso3_d, dist, contig, comlang_ethno) |> filter(year %in% c(2013:2023), iso3_o %in% eu_iso3, iso3_d %in% eu_iso3, country_id_o != "DEU.1", country_id_d != "DEU.1") |>
   select(-country_id_o,-country_id_d)
@@ -206,6 +226,8 @@ gravity_data<- gravity_data |>
 The dataset spans from 2013 to 2021, but we require data up to 2023. To achieve this, we will extend the dataset by creating fields for 2022 and 2023, assigning the values from 2021 to these new years. This is feasible because the dataset contains trade fixed costs, which remain constant over time.
 
 ```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+ 
 gravity_data <- gravity_data %>%
   bind_rows(
     gravity_data %>%
@@ -220,12 +242,18 @@ gravity_data <- gravity_data %>%
   arrange(iso3_o, iso3_d, year) %>%  
   ungroup() 
 
+gravity_data <- gravity_data %>%
+  rename(reporter = iso3_o, partner = iso3_d)
+
 ```
 
 ### Trade_data
 
 ```{r}
-trade_data <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
+
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+ 
+trade_data_digitally <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
                                   MEASURE %in% ebops_codes, 
@@ -233,11 +261,114 @@ trade_data <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTI
                                   COUNTERPART_AREA %in% eu_iso3,
                                   TIME_PERIOD %in% c(2013:2023))
 
-trade_data <- trade_data %>%
+trade_data_digitally <- trade_data_digitally %>%
   group_by(REF_AREA, COUNTERPART_AREA, TIME_PERIOD, ACCOUNTING_ENTRY) |>  
   summarise(OBS_VALUE = sum(OBS_VALUE, na.rm = TRUE)) |>
   ungroup()
 
+trade_data <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
+  filter(UNIT_MEASURE == "USD_EXC") |>
+  select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
+                                  MEASURE =="S", 
+                                  REF_AREA %in% eu_iso3,
+                                  COUNTERPART_AREA %in% eu_iso3,
+                                  TIME_PERIOD %in% c(2013:2023))
+
+trade_data <- trade_data |>
+  rename(
+    reporter = REF_AREA,
+    partner = COUNTERPART_AREA,
+    measure = MEASURE,
+    flow = ACCOUNTING_ENTRY,
+    year = TIME_PERIOD,
+    total_services = OBS_VALUE) |>
+  select(-measure)
+
+trade_data_digitally <- trade_data_digitally |>
+  rename(
+    reporter = REF_AREA,
+    partner = COUNTERPART_AREA,
+    flow = ACCOUNTING_ENTRY,
+    year = TIME_PERIOD,
+    digital_value = OBS_VALUE)
+
 ```
 
-GDP
+### GDP
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
+#Visual inspection
+table(gdp_eu$unit)
+
+gdp_eu <- gdp_eu |> filter(geo %in% eu_iso2,
+                           unit == "CP_EUR_HAB",
+                          TIME_PERIOD %in% c(2013:2023)) |>
+  select(geo,TIME_PERIOD,values) |>
+  rename(year = TIME_PERIOD)
+
+```
+
+### Internet coverage
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
+#Visual inspection
+# table(internet_eu$unit)
+# table(internet_eu$inet_spd)
+# table(internet_eu$terrtypo)
+
+internet_eu <- internet_eu |> filter(geo %in% eu_iso2,
+                           inet_spd == "MBPS_GT100",
+                          TIME_PERIOD %in% c(2013:2023)) |>
+  select(geo,TIME_PERIOD,values) |>
+  rename(year = TIME_PERIOD)
+
+```
+
+```{r}
+iso_lookup <- data.frame(iso2 = eu_iso2, iso3 = eu_iso3)
+
+gdp_eu_reporter <- gdp_eu %>%
+  left_join(iso_lookup, by = c("geo" = "iso2")) |>
+  mutate(reporter = iso3) |>
+  select(-iso3,-geo) |>
+  rename(gdppc_reporter = values)
+
+
+gdp_eu_partner<- gdp_eu %>%
+  left_join(iso_lookup, by = c("geo" = "iso2")) |>
+  mutate(partner= iso3) |>
+    select(-iso3,-geo) |>
+  rename(gdppc_partner = values)
+
+internet_eu_reporter <- internet_eu  %>%
+  left_join(iso_lookup, by = c("geo" = "iso2")) |>
+  mutate(reporter = iso3) |>
+  select(-iso3,-geo) |>
+  rename(internet_reporter = values)
+
+internet_eu_partner <- internet_eu  %>%
+  left_join(iso_lookup, by = c("geo" = "iso2")) |>
+  mutate(partner = iso3) |>
+  select(-iso3,-geo) |>
+  rename(internet_partner = values)
+
+```
+
+### Merging the datasets
+
+```{r}
+
+trade_data <- left_join(trade_data, trade_data_digitally)
+rm(trade_data_digitally)
+
+trade_data <- left_join(trade_data, gravity_data)
+trade_data <- left_join(trade_data, gdp_eu_reporter)
+trade_data <- left_join(trade_data, gdp_eu_partner)
+trade_data <- left_join(trade_data, internet_eu_reporter)
+trade_data <- left_join(trade_data, internet_eu_partner)
+
+```
