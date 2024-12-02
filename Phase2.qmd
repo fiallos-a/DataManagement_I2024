@@ -11,6 +11,7 @@ editor: visual
 library(vroom)
 library(eurostat)
 library(here)
+library(tidyverse)
 ```
 
 ## Data
@@ -108,3 +109,135 @@ if (!file.exists(here(local_dir, local_name))) {
   gravity_data <- vroom(here(local_dir, local_name))
 }
 ```
+
+## Data cleaning
+
+#### Countries in the study
+
+This project aims to study the digitally deliverable trade in services between member countries of the European Union. As of the date of this project, the European Union consists of 27 countries. Below is a table listing the countries included in this study, along with their corresponding ISO3 and ISO2 codes.
+
+| Country Name | ISO3 | ISO2 |
+|--------------|------|------|
+| Belgium      | BEL  | BE   |
+| Bulgaria     | BGR  | BG   |
+| Croatia      | HRV  | HR   |
+| Cyprus       | CYP  | CY   |
+| Czechia      | CZE  | CZ   |
+| Denmark      | DNK  | DK   |
+| Estonia      | EST  | EE   |
+| Finland      | FIN  | FI   |
+| France       | FRA  | FR   |
+| Germany      | DEU  | DE   |
+| Greece       | GRC  | EL   |
+| Hungary      | HUN  | HU   |
+| Ireland      | IRL  | IE   |
+| Italy        | ITA  | IT   |
+| Latvia       | LVA  | LV   |
+| Lithuania    | LTU  | LT   |
+| Luxembourg   | LUX  | LU   |
+| Malta        | MLT  | MT   |
+| Netherlands  | NLD  | NL   |
+| Poland       | POL  | PL   |
+| Portugal     | PRT  | PT   |
+| Romania      | ROU  | RO   |
+| Slovakia     | SVK  | SK   |
+| Slovenia     | SVN  | SI   |
+| Spain        | ESP  | ES   |
+| Sweden       | SWE  | SE   |
+
+### Digitally deliverable services
+
+Digitally deliverable services comprise those services which can be delivered remotely over computer networks. It is important to note that a product being digitally deliverable does not mean that it is always digitally delivered when traded internationally. Digitally deliverable trade will therefore be greater than trade that is actually digitally delivered.\
+\
+These statistics are compiled by aggregating relevant products available in international services trade datasets as identified in Chapter 4 of the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023). The following EBOPS-2010\* services categories are covered: insurance and pension services; financial services; charges for the use of intellectual property n.i.e.; telecommunications, computer and information services; research and development services; professional and management consulting services; architectural, engineering, scientific and other technical services; trade-related services; other business services n.i.e.; audio-visual and related services; health services and education services (excluding those consumed during international travel); heritage and recreational services.
+
+\* Extracted from [UNCTAD.org](https://unctadstat.unctad.org/datacentre/reportInfo/US.DigitallyDeliverableServices)
+
+The table below contains the service categories included as digitally deliverable services based on the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023).
+
+| Service Category | EBOPS Category Code |
+|-----------------------------------------------------|-------------------|
+| Insurance and pension services | SF |
+| Financial services | SG |
+| Charges for the use of intellectual property n.i.e. | SH |
+| Telecommunications, computer, and information services | SI |
+| Other business services n.i.e. | SJ |
+| Audio-visual and related services | SK1 |
+
+##### Parameters
+
+Based on the information above, find the parameters:
+
+```{r}
+eu_iso3 <- c("AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN",
+             "FRA", "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX" 
+             ,"MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE")
+
+eu_iso2 <- c("BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", 
+          "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", 
+          "PT", "RO", "SK", "SI", "ES", "SE")
+
+ebops_codes <- c("SF", "SG", "SH", "SI", "SJ", "SK1")
+
+```
+
+### Gravity_data dataset
+
+This dataset contains trade fixed costs. The cleaning process involves filtering the data to include only the countries relevant to the study, selecting the appropriate time period (from 2013 to 2023), and retaining the following variables:
+
+-   year
+
+-   iso3_o
+
+-   iso3_d
+
+-   dist
+
+-   contig
+
+-   comlang_ethno
+
+```{r}
+gravity_data<- gravity_data |>
+  select(year, country_id_o, country_id_d, iso3_o, iso3_d, dist, contig, comlang_ethno) |> filter(year %in% c(2013:2023), iso3_o %in% eu_iso3, iso3_d %in% eu_iso3, country_id_o != "DEU.1", country_id_d != "DEU.1") |>
+  select(-country_id_o,-country_id_d)
+```
+
+The dataset spans from 2013 to 2021, but we require data up to 2023. To achieve this, we will extend the dataset by creating fields for 2022 and 2023, assigning the values from 2021 to these new years. This is feasible because the dataset contains trade fixed costs, which remain constant over time.
+
+```{r}
+gravity_data <- gravity_data %>%
+  bind_rows(
+    gravity_data %>%
+      group_by(iso3_o, iso3_d) %>%  
+      filter(year == 2021) %>%      
+      mutate(year = 2022),          
+    gravity_data %>%
+      group_by(iso3_o, iso3_d) %>% 
+      filter(year == 2021) %>%      
+      mutate(year = 2023)           
+  ) %>%
+  arrange(iso3_o, iso3_d, year) %>%  
+  ungroup() 
+
+```
+
+### Trade_data
+
+```{r}
+trade_data <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
+  filter(UNIT_MEASURE == "USD_EXC") |>
+  select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
+                                  MEASURE %in% ebops_codes, 
+                                  REF_AREA %in% eu_iso3,
+                                  COUNTERPART_AREA %in% eu_iso3,
+                                  TIME_PERIOD %in% c(2013:2023))
+
+trade_data <- trade_data %>%
+  group_by(REF_AREA, COUNTERPART_AREA, TIME_PERIOD, ACCOUNTING_ENTRY) |>  
+  summarise(OBS_VALUE = sum(OBS_VALUE, na.rm = TRUE)) |>
+  ungroup()
+
+```
+
+GDP
