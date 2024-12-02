@@ -116,7 +116,9 @@ if (!file.exists(here(local_dir, local_name))) {
 
 ```
 
-## 2. Units of analysis: countries and service categories 
+## 2. Dataset description 
+
+## 3. Units of analysis: countries and service categories
 
 ### Countries in the study
 
@@ -152,7 +154,7 @@ This project aims to study the digitally deliverable trade in services between m
 | Spain        | ESP  | ES   |
 | Sweden       | SWE  | SE   |
 
-### Digitally deliverable services
+### Digitally deliverable services\*
 
 Digitally deliverable services comprise those services which can be delivered remotely over computer networks. It is important to note that a product being digitally deliverable does not mean that it is always digitally delivered when traded internationally. Digitally deliverable trade will therefore be greater than trade that is actually digitally delivered.\
 \
@@ -163,7 +165,7 @@ These statistics are compiled by aggregating relevant products available in inte
 The table below contains the service categories included as digitally deliverable services based on the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023).
 
 | Service Category | EBOPS Category Code |
-|----------------------------------------------------|--------------------|
+|---------------------------------------------------|---------------------|
 | Insurance and pension services | SF |
 | Financial services | SG |
 | Charges for the use of intellectual property n.i.e. | SH |
@@ -176,8 +178,6 @@ The table below contains the service categories included as digitally deliverabl
 Based on the information above, find the parameters for the data cleaning:
 
 ```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
-
 eu_iso3 <- c("AUT", "BEL", "BGR", "HRV", "CYP", "CZE", "DNK", "EST", "FIN",
              "FRA", "DEU", "GRC", "HUN", "IRL", "ITA", "LVA", "LTU", "LUX" 
              ,"MLT", "NLD", "POL", "PRT", "ROU", "SVK", "SVN", "ESP", "SWE")
@@ -190,7 +190,7 @@ ebops_codes <- c("SF", "SG", "SH", "SI", "SJ", "SK1")
 
 ```
 
-## 3. Data Cleaning and merge 
+## 4. Data Cleaning and merge
 
 ### Gravity model - CEPPI
 
@@ -209,8 +209,6 @@ This dataset contains trade fixed costs. The cleaning process involves filtering
 -   comlang_ethno
 
 ```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
-
 gravity_data<- gravity_data |>
   select(year, country_id_o, country_id_d, iso3_o, iso3_d, dist, contig, comlang_ethno) |> filter(year %in% c(2013:2023), iso3_o %in% eu_iso3, iso3_d %in% eu_iso3, country_id_o != "DEU.1", country_id_d != "DEU.1") |>
   select(-country_id_o,-country_id_d)
@@ -219,8 +217,6 @@ gravity_data<- gravity_data |>
 The dataset spans from 2013 to 2021, but we require data up to 2023. To achieve this, we will extend the dataset by creating fields for 2022 and 2023, assigning the values from 2021 to these new years. This is feasible because the dataset contains trade fixed costs, which remain constant over time.
 
 ```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
- 
 gravity_data <- gravity_data %>%
   bind_rows(
     gravity_data %>%
@@ -245,7 +241,6 @@ gravity_data <- gravity_data %>%
 Based on the definition of digitally deliverable services provided in the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023), we are using OECD trade in services statistics to calculate digitally deliverable services by aggregating the relevant individual service categories into a single value. Additionally, we are retaining only the variables pertinent to our study and filtering the data to include only the countries under analysis.
 
 ```{r}
-
 trade_data_digitally <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
@@ -331,7 +326,7 @@ internet_eu <- internet_eu |> filter(geo %in% eu_iso2,
 
 ```
 
-### Mapping EU country codes to SDMX country codes 
+### Mapping EU country codes to SDMX country codes
 
 This section describes the process of mapping the ISO country codes used for EU member states to their corresponding SDMX (Statistical Data and Metadata Exchange) country codes. This mapping ensures consistency and compatibility between datasets, facilitating the merge in the next step.
 
@@ -366,11 +361,10 @@ internet_eu_partner <- internet_eu  %>%
 
 ### Merging the datasets
 
+Since `trade_data_digitally` contains the dependent variable for the analysis, the join selected for this merge will be a *left_join*, ensuring that this dataset is retained.
+
 ```{r}
-
-trade_data <- left_join(trade_data, trade_data_digitally)
-rm(trade_data_digitally)
-
+trade_data <- left_join(trade_data_digitally,trade_data)
 trade_data <- left_join(trade_data, gravity_data)
 trade_data <- left_join(trade_data, gdp_eu_reporter)
 trade_data <- left_join(trade_data, gdp_eu_partner)
