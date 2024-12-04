@@ -217,21 +217,21 @@ gravity_data<- gravity_data |>
 The dataset spans from 2013 to 2021, but we require data up to 2023. To achieve this, we will extend the dataset by creating fields for 2022 and 2023, assigning the values from 2021 to these new years. This is feasible because the dataset contains trade fixed costs, which remain constant over time.
 
 ```{r}
-gravity_data <- gravity_data %>%
+gravity_data <- gravity_data |>
   bind_rows(
-    gravity_data %>%
-      group_by(iso3_o, iso3_d) %>%  
-      filter(year == 2021) %>%      
+    gravity_data |>
+      group_by(iso3_o, iso3_d)  |>  
+      filter(year == 2021)  |>     
       mutate(year = 2022),          
-    gravity_data %>%
-      group_by(iso3_o, iso3_d) %>% 
-      filter(year == 2021) %>%      
+    gravity_data |>
+      group_by(iso3_o, iso3_d)  |>
+      filter(year == 2021)  |>      
       mutate(year = 2023)           
-  ) %>%
-  arrange(iso3_o, iso3_d, year) %>%  
+  ) |>
+  arrange(iso3_o, iso3_d, year)  |>  
   ungroup() 
 
-gravity_data <- gravity_data %>%
+gravity_data <- gravity_data  |>
   rename(reporter = iso3_o, partner = iso3_d)
 
 ```
@@ -241,7 +241,7 @@ gravity_data <- gravity_data %>%
 Based on the definition of digitally deliverable services provided in the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023), we are using OECD trade in services statistics to calculate digitally deliverable services by aggregating the relevant individual service categories into a single value. Additionally, we are retaining only the variables pertinent to our study and filtering the data to include only the countries under analysis.
 
 ```{r}
-trade_data_digitally <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
+trade_data_digitally <- trade_data  |> select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
                                   MEASURE %in% ebops_codes, 
@@ -249,7 +249,7 @@ trade_data_digitally <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASUR
                                   COUNTERPART_AREA %in% eu_iso3,
                                   TIME_PERIOD %in% c(2013:2023))
 
-trade_data_digitally <- trade_data_digitally %>%
+trade_data_digitally <- trade_data_digitally  |>
   group_by(REF_AREA, COUNTERPART_AREA, TIME_PERIOD, ACCOUNTING_ENTRY) |>  
   summarise(OBS_VALUE = sum(OBS_VALUE, na.rm = TRUE)) |>
   ungroup()
@@ -259,7 +259,7 @@ trade_data_digitally <- trade_data_digitally %>%
 Additionally, we are computing a second variable representing the total bilateral services trade by filtering the service category 'S' (Total Services in EBOPS). An adjusted version of this variable will be used when estimating the gravity model.
 
 ```{r}
-trade_data <- trade_data %>% select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
+trade_data <- trade_data  |> select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
                                   MEASURE =="S", 
@@ -333,25 +333,25 @@ This section describes the process of mapping the ISO country codes used for EU 
 ```{r}
 iso_lookup <- data.frame(iso2 = eu_iso2, iso3 = eu_iso3)
 
-gdp_eu_reporter <- gdp_eu %>%
+gdp_eu_reporter <- gdp_eu  |>
   left_join(iso_lookup, by = c("geo" = "iso2")) |>
   mutate(reporter = iso3) |>
   select(-iso3,-geo) |>
   rename(gdppc_reporter = values)
 
-gdp_eu_partner<- gdp_eu %>%
+gdp_eu_partner<- gdp_eu  |>
   left_join(iso_lookup, by = c("geo" = "iso2")) |>
   mutate(partner= iso3) |>
     select(-iso3,-geo) |>
   rename(gdppc_partner = values)
 
-internet_eu_reporter <- internet_eu  %>%
+internet_eu_reporter <- internet_eu   |>
   left_join(iso_lookup, by = c("geo" = "iso2")) |>
   mutate(reporter = iso3) |>
   select(-iso3,-geo) |>
   rename(internet_reporter = values)
 
-internet_eu_partner <- internet_eu  %>%
+internet_eu_partner <- internet_eu   |>
   left_join(iso_lookup, by = c("geo" = "iso2")) |>
   mutate(partner = iso3) |>
   select(-iso3,-geo) |>
