@@ -22,7 +22,7 @@ In this project, we will merge four different datasets. This section downloads a
 
 ### International Trade in Services - OECD
 
-The following data set is around 1.11gb, hence it takes sometime to download. Allow it around 5 minutes to download.
+The following data set is around 1.11 gb, hence it takes sometime to download. Allow it around 5 minutes to download.
 
 ```{r}
 source <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_BOP@DF_TIS,1.0?format=csv"
@@ -456,7 +456,7 @@ scale_size_manual(values= c("EU member states" = 0.5,"EU average"= 1))+
     x = "Year", 
     y = "Households, %", 
     title = "Evolution of internet coverage in EU member states from 2013-2023",
-    subtitle = "Percentage of households with connections faster than 100 Mbps") +
+    subtitle = "Percentage of households with internet connection faster than 100 Mbps") +
   scale_x_continuous(breaks = seq(min(figure_2$year), max(figure_2$year), 1)) +  
   theme_minimal() +   
   theme(
