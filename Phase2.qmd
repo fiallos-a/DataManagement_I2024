@@ -116,7 +116,7 @@ if (!file.exists(here(local_dir, local_name))) {
 
 ```
 
-## 2. Dataset description 
+## 2. Dataset description
 
 ## 3. Units of analysis: countries and service categories
 
@@ -165,7 +165,7 @@ These statistics are compiled by aggregating relevant products available in inte
 The table below contains the service categories included as digitally deliverable services based on the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023).
 
 | Service Category | EBOPS Category Code |
-|---------------------------------------------------|---------------------|
+|--------------------------------------------------|----------------------|
 | Insurance and pension services | SF |
 | Financial services | SG |
 | Charges for the use of intellectual property n.i.e. | SH |
@@ -370,5 +370,103 @@ trade_data <- left_join(trade_data, gdp_eu_reporter)
 trade_data <- left_join(trade_data, gdp_eu_partner)
 trade_data <- left_join(trade_data, internet_eu_reporter)
 trade_data <- left_join(trade_data, internet_eu_partner)
+
+```
+
+## 5. Graphical representation
+
+The main variables of interest are the total value of digitally deliverable services traded within EU member states and the evolution of internet coverage. Figure 1 illustrates the evolution of digitally deliverable services within EU countries, contrasting this with non-digitally deliverable services in terms of exports and imports. Figure 2 presents the evolution of internet coverage in EU countries from 2013 to 2023. Both figures present an aggregate of all EU countries, Figure 2 being a simple average across all countries.
+
+### Figure 1
+
+```{r}
+
+
+figure1_1 <- trade_data |> 
+  group_by(flow,year) |>
+  summarise(value = sum(digital_value, na.rm =  T)) |>
+  mutate(category = "Digitally deliverable services") |>
+  ungroup()
+
+
+figure1_2 <- trade_data
+
+figure1_2$non_digital <- figure1_2$total_services - figure1_2$digital_value
+
+figure1_2 <- figure1_2 |> 
+  group_by(flow,year) |>
+  summarise(value = sum(non_digital, na.rm =  T)) |>
+  mutate(category = "Non-digitally deliverable services") |>
+   ungroup()
+
+figure_1 <- rbind(figure1_1,figure1_2)
+
+ggplot(figure_1, aes(x = year, y = value, color = category)) +
+  facet_grid(~flow, labeller = labeller(flow = c("C" = "Exports", "D" = "Imports"))) + 
+  geom_line(size =1) +              
+  geom_point() +             
+  labs(
+    x = "Year", 
+    y = "Trade value, millions of USD", 
+    title = "Trade value by digitally deliverable and non-digitally deliverable services", 
+    subtitle = "Intra EU trade from 2013 to 2022",
+    color = "Category"  
+  ) +
+  scale_x_continuous(breaks = seq(min(figure_1$year), max(figure_1$year), 1)) + 
+  scale_y_continuous(labels = NULL) + 
+  theme_minimal() +         
+  theme(
+    legend.position = "top", 
+    strip.text = element_text(size = 12),  
+    panel.spacing = unit(1, "lines"),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 14),  
+    axis.text = element_text(size = 14), 
+    legend.text = element_text(size = 14),  
+    plot.title = element_text(size = 14))
+
+```
+
+### Figure 2
+
+```{r}
+
+figure_2_1 <- internet_eu |> 
+  group_by(year) |>
+  summarise(value = mean(values)) |>
+  mutate(category = "EU average",
+         geo = "EU") |>
+  ungroup()
+
+figure_2_2 <- internet_eu |> 
+  group_by(geo,year) |>
+  summarise(value = mean(values)) |>
+  mutate(category = "EU member states") |>
+  ungroup()
+
+figure_2 <- rbind(figure_2_1,figure_2_2)
+
+ggplot(figure_2, aes(x = year, y = value, group = geo)) +
+  geom_line(aes(color = ifelse(category == "EU member states", "EU member states", "EU average"),
+                size = ifelse(category == "EU member states", "EU member states", "EU average")), 
+              show.legend = T) +  
+  scale_color_manual(values = c("EU member states" = "gray","EU average"= "red")) +
+scale_size_manual(values= c("EU member states" = 0.5,"EU average"= 1))+  
+  labs(
+    x = "Year", 
+    y = "Households, %", 
+    title = "Evolution of internet coverage in EU member states from 2013-2023",
+    subtitle = "Percentage of households with connections faster than 100 Mbps") +
+  scale_x_continuous(breaks = seq(min(figure_2$year), max(figure_2$year), 1)) +  
+  theme_minimal() +   
+  theme(
+    legend.position = "top", 
+    panel.grid.minor = element_blank(),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 14),  
+    axis.text = element_text(size = 14), 
+    legend.text = element_text(size = 14),  
+    plot.title = element_text(size = 14) )
+
 
 ```
