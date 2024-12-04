@@ -403,7 +403,7 @@ figure_1 <- rbind(figure1_1,figure1_2)
 
 ggplot(figure_1, aes(x = year, y = value, color = category)) +
   facet_grid(~flow, labeller = labeller(flow = c("C" = "Exports", "D" = "Imports"))) + 
-  geom_line(size =1) +              
+  geom_line(size =1.1) +              
   geom_point() +             
   labs(
     x = "Year", 
@@ -412,8 +412,8 @@ ggplot(figure_1, aes(x = year, y = value, color = category)) +
     subtitle = "Intra EU trade from 2013 to 2022",
     color = "Category"  
   ) +
-  scale_x_continuous(breaks = seq(min(figure_1$year), max(figure_1$year), 1)) + 
-  scale_y_continuous(labels = NULL) + 
+  scale_x_continuous(breaks = seq(min(figure_1$year), max(figure_1$year))) + 
+  scale_y_continuous(labels = scales::comma)+ 
   theme_minimal() +         
   theme(
     legend.position = "top", 
@@ -421,7 +421,7 @@ ggplot(figure_1, aes(x = year, y = value, color = category)) +
     panel.spacing = unit(1, "lines"),
     legend.title = element_blank(),
     axis.title = element_text(size = 14),  
-    axis.text = element_text(size = 14), 
+    axis.text = element_text(size = 9), 
     legend.text = element_text(size = 14),  
     plot.title = element_text(size = 14))
 
@@ -464,7 +464,7 @@ scale_size_manual(values= c("EU member states" = 0.5,"EU average"= 1))+
     panel.grid.minor = element_blank(),
     legend.title = element_blank(),
     axis.title = element_text(size = 14),  
-    axis.text = element_text(size = 14), 
+    axis.text = element_text(size = 9), 
     legend.text = element_text(size = 14),  
     plot.title = element_text(size = 14) )
 
