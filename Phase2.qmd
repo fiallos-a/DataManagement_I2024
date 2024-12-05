@@ -14,6 +14,7 @@ library(vroom)
 library(eurostat)
 library(here)
 library(tidyverse)
+library(curl)
 ```
 
 ## 1. Data download
@@ -96,8 +97,8 @@ local_dir <- "raw_data"
 if (!file.exists(here(local_dir, local_name))) {
   url <- "https://www.cepii.fr/DATA_DOWNLOAD/gravity/data/Gravity_csv_V202211.zip"
   
-  download.file(url, destfile = here(local_dir,"Gravity_csv_V202211"))
-  unzip(here(local_dir,"Gravity_csv_V202211"), exdir = here(local_dir,"gravity_data"))
+  curl_download(url, destfile = here(local_dir,"Gravity_csv_V202211.zip"))
+  unzip(here(local_dir,"Gravity_csv_V202211.zip"), exdir = here(local_dir,"gravity_data"))
   
   csv_files <- list.files(here(local_dir,"gravity_data"), full.names = TRUE)
   print(csv_files)
@@ -108,7 +109,6 @@ if (!file.exists(here(local_dir, local_name))) {
   vroom_write(gravity_data, here(local_dir, local_name), delim = ",")
   
   unlink(here(local_dir,"Gravity_csv_V202211.zip"), recursive = TRUE)
-  unlink(here(local_dir,"Gravity_csv_V202211"), recursive = TRUE)
   unlink(here(local_dir,"gravity_data"), recursive = TRUE)
   
 } else {
