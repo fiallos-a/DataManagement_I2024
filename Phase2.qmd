@@ -96,8 +96,8 @@ local_dir <- "raw_data"
 if (!file.exists(here(local_dir, local_name))) {
   url <- "https://www.cepii.fr/DATA_DOWNLOAD/gravity/data/Gravity_csv_V202211.zip"
   
-  download.file(url, destfile = here(local_dir,"Gravity_csv_V202211.zip"))
-  unzip(here(local_dir,"Gravity_csv_V202211.zip"), exdir = here(local_dir,"gravity_data"))
+  download.file(url, destfile = here(local_dir,"Gravity_csv_V202211"))
+  unzip(here(local_dir,"Gravity_csv_V202211"), exdir = here(local_dir,"gravity_data"))
   
   csv_files <- list.files(here(local_dir,"gravity_data"), full.names = TRUE)
   print(csv_files)
@@ -108,6 +108,7 @@ if (!file.exists(here(local_dir, local_name))) {
   vroom_write(gravity_data, here(local_dir, local_name), delim = ",")
   
   unlink(here(local_dir,"Gravity_csv_V202211.zip"), recursive = TRUE)
+  unlink(here(local_dir,"Gravity_csv_V202211"), recursive = TRUE)
   unlink(here(local_dir,"gravity_data"), recursive = TRUE)
   
 } else {
@@ -165,7 +166,7 @@ These statistics are compiled by aggregating relevant products available in inte
 The table below contains the service categories included as digitally deliverable services based on the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023).
 
 | Service Category | EBOPS Category Code |
-|--------------------------------------------------|----------------------|
+|-------------------------------------------------|-----------------------|
 | Insurance and pension services | SF |
 | Financial services | SG |
 | Charges for the use of intellectual property n.i.e. | SH |
