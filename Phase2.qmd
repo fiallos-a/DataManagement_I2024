@@ -119,6 +119,93 @@ if (!file.exists(here(local_dir, local_name))) {
 
 ## 2. Dataset description
 
+### Description of sources
+
+#### OECD
+
+The Organisation for Economic Co-operation and Development, abbreviated as OECD and based in Paris (France), is an international organisation of 38 countries committed to democracy and the market economy. The OECD's mission is to bring together the governments of countries committed to democracy and the market economy from around the world to support sustainable economic growth, boost employment, raise living standards, maintain financial stability, assist other countries' economic development, contribute to growth in world trade, etc.
+
+#### Eurostat
+
+Eurostat is the Community statistical authority appointed by the European Commission to develop, produce and spread European statistics. In this regard, it alone is competent to decide on the statistical processes, methods, standards and procedure, as well as the content to decide on the statistical publications. Eurostat's main tasks consist in developing harmonized definitions, classifications and methodologies for the production of European official statistics, in cooperation with national statistical authorities; calculating aggregate data for the European Union and eurozone, using data collected by national statistical authorities according to the harmonized standards and making European statistics freely available to decision-makers and citizens via the Eurostat website and other channels.
+
+#### Centre d'études prospectives et d'informations internationales (CEPII)
+
+The CEPII contributes to the policy making process trough its independent in-depth analyses on international trade and globalization (trade flows, regional agreements, implications of global trade policies), macroeconomic and financial issues, economic geography (regional integration, trade networks, disparities across nations), and so on. The CEPII also produces databases and provides a platform for debate among academics, experts, practitioners, decision makers and other private and public stakeholders. The organization thus collaborates with academic institutions, government agencies, international organizations, such as the IMF, WTO, and OECD, as well as the private sector.
+
+### Description of datasets
+
+#### International trade in services - OECDE
+
+This dataset compiles detailed balance of payments data on international trade in services by partner country. According to the OECD, trade in services records the value of services exchanged between residents and non-residents of an economy, including services provided through foreign affiliates established abroad. Services include transport (both freight and passengers), travel, communications services (postal, telephone, satellite, etc.), construction services, insurance and financial services, computer and information services, royalties and license fees, other business services, cultural and recreational services, and government services not included in the list above.
+
+#### GDP per capita - Eurostat
+
+The Eurostat GDP per capita dataset is a comprehensive resource for analyzing economic performance and regional disparities across Europe. It provides GDP per capita values in purchasing power standards (PPS) or Euros, adjusted for inflation and purchasing power parity. The dataset spans multiple decades and includes granular data at national and regional levels. Key features include time-series data, standardized under ESA 2010, ensuring comparability across countries and regions. This dataset is ideal for exploratory data analysis, trend forecasting, and modeling economic inequality or growth. Variables include region/country identifiers, observation years, and GDP per capita metrics in current and constant prices.
+
+#### Internet coverage - Eurostat
+
+The Broadband Internet Coverage by Speed dataset from Eurostat tracks broadband accessibility across Europe, with data segmented by speed categories such as below 30 Mbps or above 100 Mbps. It highlights the percentage of households or populations covered by broadband services, offering insights at both national and regional levels over several years. The dataset is crucial for evaluating the progress of digital infrastructure, pinpointing disparities in internet access, and shaping strategies for improving connectivity. Key fields include geographic identifiers, year, and broadband coverage metrics by speed.
+
+#### Gravity database - CEPII
+
+The CEPII Gravity database provides, for any pair of countries, from 1948 to 2020, all the information required to estimate gravity equations. Each observation corresponds to a combination of an exporting country, an importing country and a year for which the CEPII provides trade flows, as well as geographic, cultural, trade facilitation and macroeconomic variables. Gravity is the main dataset, which contains the core information. Within the dataset, countries are referred to using the variable country_id, which combines a country’s alphabetic ISO3 code with a number identifying potential territorial transformations of the country.
+
+```{r}
+data_sets <- list(
+list(name = "International trade in services", data = trade_data, year_column = "TIME_PERIOD"),
+list(name = "GDP per capita", data = gdp_eu, year_column = "TIME_PERIOD"),
+list(name = "Internet coverage", data = internet_eu, year_column = "TIME_PERIOD"),
+list(name = "Gravity model", data = gravity_data, year_column = "year")
+)
+
+get_summary <- function(dataset) {
+data <- dataset$data
+dataset_name <- dataset$name
+year_column <- dataset$year_column
+
+if (year_column %in% colnames(data)) {
+    years <- data[[year_column]]
+    period <- if (all(is.na(years))) {
+      NA
+    } else {
+      paste(min(years, na.rm = TRUE), max(years, na.rm = TRUE), sep = "-")
+    }
+  } else {
+    period <- NA
+  }
+
+total_data_points <- nrow(data) * ncol(data)
+
+data.frame(
+Dataset = dataset_name,
+Observations = nrow(data),
+Variables = ncol(data),
+Total_Data_Points = total_data_points,
+Period = period
+)
+
+}
+
+summary_list <- lapply(data_sets, get_summary)
+summary_table <- do.call (rbind, summary_list)
+print(summary_table)
+```
+
+### Description of relevant variables
+
+| Variable | Description |
+|------------------------------------|-----------------------------------------------------------|
+| country_id_o | origin country |
+| country_id_d   | destination country |
+| dist | geographical distance between the two countries |
+| contig | 1 if the two countries share a land border |
+| comlang_ethno | 1 if the two countries share a common language  |
+| measure | type of trade activity being measured |
+| flow | accounting entry related to the trade |
+| total_services | value for the trade flows |
+| inet_spd | percentage of households or geographic areas with broadband internet access at speeds greater than 100 Mbps |
+
 ## 3. Units of analysis: countries and service categories
 
 ### Countries in the study
@@ -166,7 +253,7 @@ These statistics are compiled by aggregating relevant products available in inte
 The table below contains the service categories included as digitally deliverable services based on the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023).
 
 | Service Category | EBOPS Category Code |
-|-------------------------------------------------|-----------------------|
+|----|----|
 | Insurance and pension services | SF |
 | Financial services | SG |
 | Charges for the use of intellectual property n.i.e. | SH |
@@ -212,7 +299,7 @@ This dataset contains trade fixed costs. The cleaning process involves filtering
 ```{r}
 gravity_data<- gravity_data |>
   select(year, country_id_o, country_id_d, iso3_o, iso3_d, dist, contig, comlang_ethno) |> filter(year %in% c(2013:2023), iso3_o %in% eu_iso3, iso3_d %in% eu_iso3, country_id_o != "DEU.1", country_id_d != "DEU.1") |>
-  select(-country_id_o,-country_id_d)
+  select(-country_id_o,-country_ id_d)
 ```
 
 The dataset spans from 2013 to 2021, but we require data up to 2023. To achieve this, we will extend the dataset by creating fields for 2022 and 2023, assigning the values from 2021 to these new years. This is feasible because the dataset contains trade fixed costs, which remain constant over time.
@@ -242,7 +329,7 @@ gravity_data <- gravity_data  |>
 Based on the definition of digitally deliverable services provided in the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023), we are using OECD trade in services statistics to calculate digitally deliverable services by aggregating the relevant individual service categories into a single value. Additionally, we are retaining only the variables pertinent to our study and filtering the data to include only the countries under analysis.
 
 ```{r}
-trade_data_digitally <- trade_data  |> select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
+trade_data_digitally <- trade_data  |> select(c(t)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
                                   MEASURE %in% ebops_codes, 
