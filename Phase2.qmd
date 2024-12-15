@@ -7,6 +7,8 @@ editor: visual
 
 # Estimating the effects of connectivity in intra-EU digitally deliverable trade in services
 
+[Link of the project in github](https://github.com/fiallos-a/DataManagement_I2024)
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE)
 
