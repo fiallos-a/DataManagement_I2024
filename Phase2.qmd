@@ -7,14 +7,17 @@ editor: visual
 
 # Estimating the effects of connectivity in intra-EU digitally deliverable trade in services
 
-This script uses the following libraries:
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
 
-```{r}
+#This script uses the following libraries:
+  
 library(vroom)
 library(eurostat)
 library(here)
 library(tidyverse)
 library(curl)
+library(gt)
 ```
 
 ## 1. Data download
@@ -117,9 +120,9 @@ if (!file.exists(here(local_dir, local_name))) {
 
 ```
 
-## 2. Dataset description
+## 2. Datasets description
 
-### Description of sources
+### Description of data sources
 
 #### OECD
 
@@ -135,7 +138,7 @@ The CEPII contributes to the policy making process trough its independent in-dep
 
 ### Description of datasets
 
-#### International trade in services - OECDE
+#### International trade in services - OECD
 
 This dataset compiles detailed balance of payments data on international trade in services by partner country. According to the OECD, trade in services records the value of services exchanged between residents and non-residents of an economy, including services provided through foreign affiliates established abroad. Services include transport (both freight and passengers), travel, communications services (postal, telephone, satellite, etc.), construction services, insurance and financial services, computer and information services, royalties and license fees, other business services, cultural and recreational services, and government services not included in the list above.
 
@@ -181,7 +184,7 @@ data.frame(
 Dataset = dataset_name,
 Observations = nrow(data),
 Variables = ncol(data),
-Total_Data_Points = total_data_points,
+`Total data points` = total_data_points,
 Period = period
 )
 
@@ -189,18 +192,19 @@ Period = period
 
 summary_list <- lapply(data_sets, get_summary)
 summary_table <- do.call (rbind, summary_list)
-print(summary_table)
+summary_table <- summary_table |> rename(`Total data points` = Total.data.points)
+gt(summary_table) |> tab_header(title = "Datasets used in this project")
 ```
 
 ### Description of relevant variables
 
 | Variable | Description |
-|------------------------------------|-----------------------------------------------------------|
+|----------------------------|--------------------------------------------|
 | country_id_o | origin country |
-| country_id_d   | destination country |
+| country_id_d | destination country |
 | dist | geographical distance between the two countries |
 | contig | 1 if the two countries share a land border |
-| comlang_ethno | 1 if the two countries share a common language  |
+| comlang_ethno | 1 if the two countries share a common language |
 | measure | type of trade activity being measured |
 | flow | accounting entry related to the trade |
 | total_services | value for the trade flows |
@@ -299,7 +303,7 @@ This dataset contains trade fixed costs. The cleaning process involves filtering
 ```{r}
 gravity_data<- gravity_data |>
   select(year, country_id_o, country_id_d, iso3_o, iso3_d, dist, contig, comlang_ethno) |> filter(year %in% c(2013:2023), iso3_o %in% eu_iso3, iso3_d %in% eu_iso3, country_id_o != "DEU.1", country_id_d != "DEU.1") |>
-  select(-country_id_o,-country_ id_d)
+  select(-country_id_o,-country_id_d)
 ```
 
 The dataset spans from 2013 to 2021, but we require data up to 2023. To achieve this, we will extend the dataset by creating fields for 2022 and 2023, assigning the values from 2021 to these new years. This is feasible because the dataset contains trade fixed costs, which remain constant over time.
@@ -329,7 +333,7 @@ gravity_data <- gravity_data  |>
 Based on the definition of digitally deliverable services provided in the IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade (2023), we are using OECD trade in services statistics to calculate digitally deliverable services by aggregating the relevant individual service categories into a single value. Additionally, we are retaining only the variables pertinent to our study and filtering the data to include only the countries under analysis.
 
 ```{r}
-trade_data_digitally <- trade_data  |> select(c(t)) |>
+trade_data_digitally <- trade_data  |> select(c(REF_AREA,COUNTERPART_AREA,MEASURE,ACCOUNTING_ENTRY,TIME_PERIOD,OBS_VALUE,UNIT_MEASURE)) |>
   filter(UNIT_MEASURE == "USD_EXC") |>
   select(-UNIT_MEASURE) |> filter(ACCOUNTING_ENTRY != "B",
                                   MEASURE %in% ebops_codes, 
@@ -491,7 +495,7 @@ figure_1 <- rbind(figure1_1,figure1_2)
 
 ggplot(figure_1, aes(x = year, y = value, color = category)) +
   facet_grid(~flow, labeller = labeller(flow = c("C" = "Exports", "D" = "Imports"))) + 
-  geom_line(size =1.1) +              
+  geom_line(linewidth =1.1) +              
   geom_point() +             
   labs(
     x = "Year", 
@@ -508,10 +512,10 @@ ggplot(figure_1, aes(x = year, y = value, color = category)) +
     strip.text = element_text(size = 12),  
     panel.spacing = unit(1, "lines"),
     legend.title = element_blank(),
-    axis.title = element_text(size = 14),  
-    axis.text = element_text(size = 9), 
-    legend.text = element_text(size = 14),  
-    plot.title = element_text(size = 14))
+    axis.title = element_text(size = 11),  
+    axis.text = element_text(size = 8), 
+    legend.text = element_text(size = 12),  
+    plot.title = element_text(size = 13))
 
 ```
 
@@ -551,10 +555,10 @@ scale_size_manual(values= c("EU member states" = 0.5,"EU average"= 1))+
     legend.position = "top", 
     panel.grid.minor = element_blank(),
     legend.title = element_blank(),
-    axis.title = element_text(size = 14),  
+    axis.title = element_text(size = 11),  
     axis.text = element_text(size = 9), 
-    legend.text = element_text(size = 14),  
-    plot.title = element_text(size = 14) )
+    legend.text = element_text(size = 12),  
+    plot.title = element_text(size = 15) )
 
 
 ```
