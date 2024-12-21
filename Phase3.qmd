@@ -28,6 +28,34 @@ Digitally deliverable services refer to those that can be provided remotely over
 
 The study relies on international services trade data, aligning with the framework outlined in Chapter 4 of the *IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade* (2023). Key service categories analyzed include insurance and pension services, financial services, charges for the use of intellectual property n.i.e., telecommunications and IT services, research and development services, professional and management consulting, architectural and engineering services, trade-related and other business services, audio-visual and related services, health and education services (excluding those linked to international travel), as well as heritage and recreational services. These categories are defined within the Extended Balance of Payments Services (EBOPS-2010) classification system.
 
+```{r}
+local_name <- "processed.csv"
+local_dir <- "raw_data"
+
+trade_data <- vroom(here(local_dir, local_name))
+
+figure1 <- trade_data |> summarise(digital = sum(digital_value), internet = mean(internet_reporter), .by = c(reporter,year,flow))
+
+plot <- ggplot(figure1, aes(x = internet, y = digital)) +
+  geom_point(alpha = 0.3, aes(color = flow)) +  # Scatter points
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", fullrange = TRUE) + 
+    facet_wrap(~c(flow)) +# Trend lines
+  labs(
+    title = "Digitally deliverable trade and internet coverage",
+    x = "Internet coverage, % of households",
+    y = "Digitally deriverable trade, millions of USD",
+    color = "Internet Reporter"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5),  # Center title
+    legend.position = "bottom"
+  )
+
+# Display the plot
+print(plot)
+```
+
 ## 2. Description of datasets in the project
 
 ```{r}
