@@ -1,0 +1,8 @@
+---
+title: "Data Management Project: Phase 3"
+author: "Andrés Fiallos & Blandine Ledoux"
+format: pdf
+editor: visual
+---
+
+## 
