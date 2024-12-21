@@ -465,6 +465,10 @@ trade_data <- left_join(trade_data, gdp_eu_partner)
 trade_data <- left_join(trade_data, internet_eu_reporter)
 trade_data <- left_join(trade_data, internet_eu_partner)
 
+local_name <- "processed.csv"
+local_dir <- "raw_data"
+
+vroom_write(trade_data, here(local_dir, local_name), delim = ",")
 ```
 
 ## 5. Graphical representation
