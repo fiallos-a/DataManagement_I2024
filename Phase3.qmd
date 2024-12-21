@@ -5,4 +5,161 @@ format: pdf
 editor: visual
 ---
 
-## 
+# Estimating the effects of connectivity in intra-EU digitally deliverable trade in services
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(vroom)
+library(eurostat)
+library(here)
+library(tidyverse)
+library(curl)
+library(gt)
+```
+
+## 1. Research question
+
+This research report explores the **relationship between internet connectivity and digitally deliverable trade in services among the 27 member countries of the European Union (EU)**. The project is motivated by the significant increase in internet connectivity and speeds across the EU, where private household internet coverage rose from 45.5% in 2013 to 88.1% in 2023 (EUROSTAT, 2024), with households now accessing speeds over 100 Mbps. Additionally, Fiallos and Liberatore (2023) discuss that digitalization has significantly influenced trade in services, with technological advancements enabling the remote delivery of various service types. Between 2005 and 2021, globally, digitally deliverable services grew at an average annual rate of 7.7%, outpacing the 3.9% growth rate of non-digitally deliverable services (Fiallos, A. and Liberatore, A; 2023).
+
+The rapid expansion of high-speed internet sparks interest in exploring its potential impact on the growth and patterns of digitally delivered trade in services. The research seeks to assess how enhanced digital infrastructure within the EU has influenced the nature and volume of digitally deliverable services exchanged among member states, providing insights into the evolving landscape of digital trade in an interconnected Europe.
+
+Digitally deliverable services refer to those that can be provided remotely over computer networks, though it is important to distinguish that the capability of digital delivery does not necessarily mean that services are always digitally delivered in practice; hence, the scope of digitally deliverable trade is broader than the subset of services that are actually delivered digitally.
+
+The study relies on international services trade data, aligning with the framework outlined in Chapter 4 of the *IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade* (2023). Key service categories analyzed include insurance and pension services, financial services, charges for the use of intellectual property n.i.e., telecommunications and IT services, research and development services, professional and management consulting, architectural and engineering services, trade-related and other business services, audio-visual and related services, health and education services (excluding those linked to international travel), as well as heritage and recreational services. These categories are defined within the Extended Balance of Payments Services (EBOPS-2010) classification system.
+
+## 2. Description of datasets in the project
+
+```{r}
+source <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_BOP@DF_TIS,1.0?format=csv"
+local_name <- "trade_data.csv"
+local_dir <- "raw_data"
+## Check if the directory exists, otherwise create
+if (!dir.exists(here(local_dir))) {
+  ## create the directory if needed
+  dir.create(here(local_dir)) 
+}
+## Check if file exists, otherwise download 
+if (!file.exists(here(local_dir, local_name))) {
+  ## we need to download it
+  trade_data <- vroom(source)
+  ## let's save the file to avoid useless downloading
+  vroom_write(trade_data, here(local_dir, local_name), delim = ",")
+} else {
+  ## we need only to load it
+  trade_data <- vroom(here(local_dir, local_name))
+}
+
+source <- "tec00001"
+local_name <- "gdp_eu.csv"
+local_dir <- "raw_data"
+
+## Check if file exists, otherwise download 
+if (!file.exists(here(local_dir, local_name))) {
+  ## we need to download it
+  gdp_eu <- get_eurostat(source, time_format = "num", stringsAsFactors = TRUE)
+  
+  ## let's save the file to avoid useless downloading
+  vroom_write(gdp_eu, here(local_dir, local_name), delim = ",")
+} else {
+  ## we need only to load it
+  gdp_eu <- vroom(here(local_dir, local_name))
+}
+
+source <- "isoc_cbs"
+local_name <- "internet_eu.csv"
+local_dir <- "raw_data"
+
+## Check if file exists, otherwise download 
+if (!file.exists(here(local_dir, local_name))) {
+  internet_eu <- get_eurostat(source, time_format = "num", stringsAsFactors = TRUE)
+  
+  vroom_write(internet_eu, here(local_dir, local_name), delim = ",")
+} else {
+  internet_eu <- vroom(here(local_dir, local_name))
+}
+
+local_name <- "gravity_data.csv"
+local_dir <- "raw_data"
+
+if (!file.exists(here(local_dir, local_name))) {
+  url <- "https://www.cepii.fr/DATA_DOWNLOAD/gravity/data/Gravity_csv_V202211.zip"
+  
+  curl_download(url, destfile = here(local_dir,"Gravity_csv_V202211.zip"))
+  unzip(here(local_dir,"Gravity_csv_V202211.zip"), exdir = here(local_dir,"gravity_data"))
+  
+  csv_files <- list.files(here(local_dir,"gravity_data"), full.names = TRUE)
+  print(csv_files)
+  
+  #We need to read second element
+  gravity_data <- vroom(csv_files[2]) 
+
+  vroom_write(gravity_data, here(local_dir, local_name), delim = ",")
+  
+  unlink(here(local_dir,"Gravity_csv_V202211.zip"), recursive = TRUE)
+  unlink(here(local_dir,"gravity_data"), recursive = TRUE)
+  
+} else {
+  gravity_data <- vroom(here(local_dir, local_name))
+}
+```
+
+#### International trade in services - OECD
+
+This dataset compiles detailed balance of payments data on international trade in services by partner country. According to the OECD, trade in services records the value of services exchanged between residents and non-residents of an economy, including services provided through foreign affiliates established abroad. Services include transport (both freight and passengers), travel, communications services (postal, telephone, satellite, etc.), construction services, insurance and financial services, computer and information services, royalties and license fees, other business services, cultural and recreational services, and government services not included in the list above.
+
+#### GDP per capita - Eurostat
+
+The Eurostat GDP per capita dataset is a comprehensive resource for analyzing economic performance and regional disparities across Europe. It provides GDP per capita values in purchasing power standards (PPS) or Euros, adjusted for inflation and purchasing power parity. The dataset spans multiple decades and includes granular data at national and regional levels. Key features include time-series data, standardized under ESA 2010, ensuring comparability across countries and regions. This dataset is ideal for exploratory data analysis, trend forecasting, and modeling economic inequality or growth. Variables include region/country identifiers, observation years, and GDP per capita metrics in current and constant prices.
+
+#### Internet coverage - Eurostat
+
+The Broadband Internet Coverage by Speed dataset from Eurostat tracks broadband accessibility across Europe, with data segmented by speed categories such as below 30 Mbps or above 100 Mbps. It highlights the percentage of households or populations covered by broadband services, offering insights at both national and regional levels over several years. The dataset is crucial for evaluating the progress of digital infrastructure, pinpointing disparities in internet access, and shaping strategies for improving connectivity. Key fields include geographic identifiers, year, and broadband coverage metrics by speed.
+
+#### Gravity database - CEPII
+
+The CEPII Gravity database provides, for any pair of countries, from 1948 to 2020, all the information required to estimate gravity equations. Each observation corresponds to a combination of an exporting country, an importing country and a year for which the CEPII provides trade flows, as well as geographic, cultural, trade facilitation and macroeconomic variables. Gravity is the main dataset, which contains the core information. Within the dataset, countries are referred to using the variable country_id, which combines a country’s alphabetic ISO3 code with a number identifying potential territorial transformations of the country.
+
+```{r}
+data_sets <- list(
+list(name = "International trade in services", data = trade_data, year_column = "TIME_PERIOD"),
+list(name = "GDP per capita", data = gdp_eu, year_column = "TIME_PERIOD"),
+list(name = "Internet coverage", data = internet_eu, year_column = "TIME_PERIOD"),
+list(name = "Gravity model", data = gravity_data, year_column = "year")
+)
+
+get_summary <- function(dataset) {
+data <- dataset$data
+dataset_name <- dataset$name
+year_column <- dataset$year_column
+
+if (year_column %in% colnames(data)) {
+    years <- data[[year_column]]
+    period <- if (all(is.na(years))) {
+      NA
+    } else {
+      paste(min(years, na.rm = TRUE), max(years, na.rm = TRUE), sep = "-")
+    }
+  } else {
+    period <- NA
+  }
+
+total_data_points <- nrow(data) * ncol(data)
+
+data.frame(
+Dataset = dataset_name,
+Observations = nrow(data),
+Variables = ncol(data),
+Period = period
+)}
+
+summary_list <- lapply(data_sets, get_summary)
+summary_table <- do.call (rbind, summary_list)
+gt(summary_table) |> tab_header(title = "Table 1. Datasets used in this report")
+```
+
+## 3. Results and discussion
+
+## 4. Conclusion
+
+### References
