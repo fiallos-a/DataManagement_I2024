@@ -1,13 +1,24 @@
 ---
 title: "Estimating the effects of connectivity in intra-EU digitally deliverable trade in services"
 author: "Andrés Fiallos & Blandine Ledoux"
-format: 
-  pdf: 
-    fig-pos: "H"
+format:
+  pdf:
+    output: default
+    include-in-header:
+      text: |
+        \usepackage{caption}
+        \captionsetup[table]{labelformat=empty}
+        \usepackage{tabularray}
+        \usepackage{float}
+        \usepackage{graphicx}
+        \usepackage{codehigh}
+        \usepackage[normalem]{ulem}
+        \UseTblrLibrary{booktabs}
+        \UseTblrLibrary{siunitx}
 ---
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, out.extra = "", fig.pos = "h")
 
 library(vroom)
 library(eurostat)
@@ -19,6 +30,7 @@ library(stats)
 library(broom)
 library(knitr)
 library(modelsummary)
+library(kableExtra)
 ```
 
 ## 1. Research question
@@ -160,7 +172,7 @@ Period = period
 
 summary_list <- lapply(data_sets, get_summary)
 summary_table <- do.call (rbind, summary_list)
-gt(summary_table) |> tab_header(title = "Table 1. Datasets used in this report")
+kable(summary_table, caption = "Table 1: Datasets used in this report")
 ```
 
 ## 3. Data analysis
@@ -203,7 +215,12 @@ plot1 <- ggplot(figure1, aes(x = internet, y = digital)) +
     caption = "Source: Own elaboration with data from Eurostat and OECD. (2024)."
   ) +
   theme_bw() +
-  theme(legend.position = "none")
+  theme(legend.position = "none",
+        axis.title = element_text(size = 10),  
+        axis.text = element_text(size = 9), 
+        legend.text = element_text(size = 9),  
+        plot.title = element_text(size = 11), 
+        plot.subtitle = element_text(size = 10) )
 
 # Display the plot
 print(plot1)
@@ -211,42 +228,42 @@ print(plot1)
 
 ### Econometric analysis: a gravity model
 
-#### **Poisson Pseudo Maximum Likelihood (PPML)**
+This study applies a model inspired by the gravity model developed by Liberatore and Wettstein (2021), which examines global bilateral trade in services. Liberatore and Wettstein employed various specifications of a base model depending on the availability of regressor data. In contrast, our research focuses on estimating a single model, which is a modified version of what they termed their "full model."
 
-PPML (Poisson Pseudo-Maximum Likelihood) is an estimation method employed for gravity models within the framework of generalized linear models (GLMs). It is estimated using a GLM with a quasipoisson distribution and a log-link function. The PPML approach was introduced by Silva and Tenreyro (2006). The model applied in this research is inspired by the gravity model proposed by Liberatore and Wettstein (2021), which analyzes bilateral trade in services on a global scale. This model includes different specifications based on the availability of regressor data. In this study, we estimate a single model, which is a modified version of what Liberatore and Wettstein (2021) refer to as their "full model." A key innovation in our approach is the inclusion of internet coverage in both the reporting and partner countries as an explanatory variable. The model is specified as follows:
+A notable innovation in our approach is the inclusion of internet coverage as an explanatory variable for both the reporting and partner countries. The model specification is as follows:
 
 \begin{align}
-\text{digital\_trade}_{ijt} &= \beta_0 + \beta_1 \text{gdp\_pc}_{it} + \beta_2 \text{gdp\_pc}_{jt} + \beta_3 \text{distance}_{ij} \nonumber \\
-&\quad + \beta_4 \text{contiguity}_{ij} + \beta_5 \text{common\_language}_{ij} + \beta_6 \text{total\_serv}_{ijt} \nonumber \\
-&\quad + \beta_7 \text{factor(year)}_t + \beta_8 \text{factor(partner)} + \beta_9 \text{internet\_coverage}_{it} \nonumber \\
-&\quad + \beta_{10} \text{internet\_coverage}_{jt} + \epsilon \nonumber
+\textbf{digital\_trade}_{ijt} &= \beta_0 + \beta_1 \textbf{gdp\_pc}_{it} + \beta_2 \textbf{gdp\_pc}_{jt} + \beta_3 \textbf{distance}_{ij} \nonumber \\
+&\quad + \beta_4 \textbf{contiguity}_{ij} + \beta_5 \textbf{common\_language}_{ij} + \beta_6 \textbf{total\_serv}_{ijt} \nonumber \\
+&\quad + \beta_7 \textbf{factor(year)}_t + \beta_8 \textbf{factor(partner)} + \beta_9 \textbf{internet\_coverage}_{it} \nonumber \\
+&\quad + \beta_{10} \textbf{internet\_coverage}_{jt} + \epsilon \nonumber
 \end{align}
 
--   `digital_trade_ijt`: Bilateral digitally deliverable trade between country i and j in year t
+where each of the variables is defined as:
 
--   `gdp_pc_it`: GDP per capita of country i in year t
+\begin{itemize}
+    \item \textbf{digital\_trade}$_{ijt}$: Bilateral digitally deliverable trade between country $i$ and $j$ in year $t$.
+    \item \textbf{gdp\_pc}$_{it}$: GDP per capita of reporting country $i$ in year $t$.
+    \item \textbf{gdp\_pc}$_{jt}$: GDP per capita of partner country $j$ in year $t$.
+    \item \textbf{distance}$_{ij}$: Distance between countries $i$ and $j$ in year $t$.
+    \item \textbf{contiguity}$_{ij}$: $1$ if countries $i$ and $j$ are neighboring countries.
+    \item \textbf{common\_language}$_{ij}$: $1$ if countries $i$ and $j$ share a common language.
+    \item \textbf{total\_serv}$_{ijt}$: Total trade in services between countries $i$ and $j$ in year $t$.
+    \item \textbf{internet\_coverage}$_{it}$: Internet coverage in reporting country $i$ in year $t$.
+    \item \textbf{internet\_coverage}$_{jt}$: Internet coverage in partner country $j$ in year $t$.
+    \item \textbf{factor(year)}$_{t}$: Fixed effects of year $t$.
+    \item \textbf{factor(partner)}: Fixed effects of partner country $j$.
+    \item \textbf{$\epsilon$}: Error term.
+\end{itemize}
 
--   `gdp_pc_jt`: GDP per capita of country j in year t
 
--   `distance`stance between countries i and j in year t
+#### **Poisson Pseudo Maximum Likelihood (PPML)**
 
--   `contiguity_ij`: 1 if countries i and j are neighboring countries
+The Poisson Pseudo-Maximum Likelihood (PPML) estimation method is widely used for gravity models within the framework of generalized linear models (GLMs). It involves estimation through a GLM with a quasipoisson distribution and a log-link function. Originally introduced by Silva and Tenreyro (2006), PPML has become a standard method for analyzing trade flows.
 
--   `common_language_ij`: 1 if countries i and j share a common language
+In this study, the proposed econometric specification is estimated using the PPML method. The data is divided into exports and imports, and two separate regressions are estimated, one for each flow. The results are summarized in Table 2. Note that, for relevance, the fixed effects for year and partner countries are not included in the table.
 
--   `total_serv_ijt`: Total trade in services between countries i in year t
-
--   `internet_coverage_it`: Internet coverage in country i in year t
-
--   `internet_coverage_jt`: Internet coverage in country j in year t
-
--   `factor(year_t)`: Fixed effects of year t
-
--   `factor(partner)`: Fixed effects of country j
-
--   `\epsilon_ij`: Error term
-
-```{r}
+```{r, fig.pos = "b"}
 trade_data$year <- as.factor(trade_data$year)
 trade_data$partner <- as.factor(trade_data$partner)
 
@@ -281,10 +298,25 @@ modelsummary(models,
                              "log(total_services)" = "Total services traded",
                              "log(internet_reporter)" = "Internet coverage: reporter",
                              "log(internet_partner)" = "Internet coverage: partner"),
-              title = 'Table 2.Results of PPML regressions')
+              title = 'Results of PPML regressions')
+
 
 ```
 
+### Results
+
+The estimated coefficients indicate a positive and statistically significant relationship between the trade value of digitally deliverable services and internet coverage in both the reporting and partner countries, for both export and import flows within EU countries between 2013 and 2022, under the proposed model specification. For exports, the internet coverage in the reporting country appears to have a slightly stronger influence than in the partner country (estimated coefficients of 0.030 versus 0.011). This suggests that the availability of reliable and widespread internet infrastructure in the exporting country plays a crucial role in facilitating digitally deliverable trade.
+
+In contrast, for imports, internet coverage in partner countries seems to have a slightly greater influence than in the reporting country (estimated coefficients of 0.031 versus 0.019). This could indicate that the ability of a country to access and consume digitally deliverable services is more dependent on the internet infrastructure of the partner country, rather than that of the reporting country. Nevertheless, the internet coverage in the reporting country remains an explanatory factor.
+
 ## 4. Conclusion
+
+This research represents an initial exploration into the relationship between internet connectivity and digitally deliverable trade in services among the 27 member countries of the European Union (EU). By analyzing data spanning from 2013 to 2022, the study reveals a significant and positive relationship between enhanced digital infrastructure and the volume of digitally deliverable services exchanged within the EU. The findings suggest that improved internet coverage, both in the reporting and partner countries, plays a crucial role in facilitating trade in digitally deliverable services.
+
+The analysis indicates that for exports, the internet coverage in the reporting country has a slightly stronger influence on trade volumes than the internet coverage in partner countries. This highlights the importance of reliable and widespread internet infrastructure in the exporting country for enabling the remote delivery of services. Conversely, for imports, the internet coverage in the partner country appears to be more influential, emphasizing that the ability of a country to access and consume digitally deliverable services is largely dependent on the connectivity available in the partner country, though the reporting country's internet infrastructure also remains a significant factor.
+
+These findings underscore the growing significance of internet infrastructure in driving digitally deliverable trade, a sector that continues to expand as technology evolves. As digital services such as cloud computing, software, and digital media increasingly define global trade flows, the quality and availability of internet coverage will continue to be pivotal in shaping these exchanges. Moreover, the results of this study offer insights into how EU member states can strategically invest in digital infrastructure to further enhance cross-border trade trough digital means.
+
+In conclusion, this research contributes to the understanding of the role of internet connectivity in fostering trade in services within the EU. It also paves the way for future studies to explore deeper relationships between internet infrastructure and specific sectors of digitally deliverable services, potentially guiding policies aimed at strengthening digital trade within and beyond the EU.
 
 ### References
