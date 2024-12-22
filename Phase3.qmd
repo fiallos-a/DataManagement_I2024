@@ -1,11 +1,10 @@
 ---
-title: "Data Management Project: Phase 3"
+title: "Estimating the effects of connectivity in intra-EU digitally deliverable trade in services"
 author: "Andrés Fiallos & Blandine Ledoux"
-format: pdf
-editor: visual
+format: 
+  pdf: 
+    fig-pos: "H"
 ---
-
-# Estimating the effects of connectivity in intra-EU digitally deliverable trade in services
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
@@ -16,47 +15,25 @@ library(here)
 library(tidyverse)
 library(curl)
 library(gt)
+library(stats)
+library(broom)
+library(knitr)
+library(modelsummary)
 ```
 
 ## 1. Research question
 
-This research report explores the **relationship between internet connectivity and digitally deliverable trade in services among the 27 member countries of the European Union (EU)**. The project is motivated by the significant increase in internet connectivity and speeds across the EU, where private household internet coverage rose from 45.5% in 2013 to 88.1% in 2023 (EUROSTAT, 2024), with households now accessing speeds over 100 Mbps. Additionally, Fiallos and Liberatore (2023) discuss that digitalization has significantly influenced trade in services, with technological advancements enabling the remote delivery of various service types. Between 2005 and 2021, globally, digitally deliverable services grew at an average annual rate of 7.7%, outpacing the 3.9% growth rate of non-digitally deliverable services (Fiallos, A. and Liberatore, A; 2023).
+This research report corresponds to a first attempt to explore the **relationship between internet connectivity and digitally deliverable trade in services among the 27 member countries of the European Union (EU)**. The research seeks to assess how enhanced digital infrastructure within the EU has influenced the volume of digitally deliverable services exchanged among member states, providing insights into the evolving landscape of digital trade in an interconnected Europe.
 
-The rapid expansion of high-speed internet sparks interest in exploring its potential impact on the growth and patterns of digitally delivered trade in services. The research seeks to assess how enhanced digital infrastructure within the EU has influenced the nature and volume of digitally deliverable services exchanged among member states, providing insights into the evolving landscape of digital trade in an interconnected Europe.
+The project is motivated by the significant increase in internet connectivity and speeds across the EU, where private household internet coverage (with speeds over 100 Mbps) rose from 45.5% in 2013 to 88.1% in 2023 (EUROSTAT, 2024). Additionally, Fiallos and Liberatore (2023) discuss that digitalization has significantly influenced trade in services, with technological advancements enabling the remote delivery of various service types. Between 2005 and 2021, globally, digitally deliverable services grew at an average annual rate of 7.7%, outpacing the 3.9% growth rate of non-digitally deliverable services (Fiallos, A. and Liberatore, A; 2023).
 
-Digitally deliverable services refer to those that can be provided remotely over computer networks, though it is important to distinguish that the capability of digital delivery does not necessarily mean that services are always digitally delivered in practice; hence, the scope of digitally deliverable trade is broader than the subset of services that are actually delivered digitally.
+Digitally deliverable services refer to those that can be provided remotely over computer networks, though it is important to distinguish that the capability of digital delivery does not necessarily mean that services are always digitally delivered in practice; hence, the scope of digitally deliverable trade is broader than the subset of services that are actually delivered digitally (*IMF-OECD-UNCTAD-WTO,* 2023).
 
 The study relies on international services trade data, aligning with the framework outlined in Chapter 4 of the *IMF-OECD-UNCTAD-WTO Handbook on Measuring Digital Trade* (2023). Key service categories analyzed include insurance and pension services, financial services, charges for the use of intellectual property n.i.e., telecommunications and IT services, research and development services, professional and management consulting, architectural and engineering services, trade-related and other business services, audio-visual and related services, health and education services (excluding those linked to international travel), as well as heritage and recreational services. These categories are defined within the Extended Balance of Payments Services (EBOPS-2010) classification system.
 
-```{r}
-local_name <- "processed.csv"
-local_dir <- "raw_data"
-
-trade_data <- vroom(here(local_dir, local_name))
-
-figure1 <- trade_data |> summarise(digital = sum(digital_value), internet = mean(internet_reporter), .by = c(reporter,year,flow))
-
-plot <- ggplot(figure1, aes(x = internet, y = digital)) +
-  geom_point(alpha = 0.3, aes(color = flow)) +  # Scatter points
-  geom_smooth(method = "lm", se = FALSE, linetype = "dashed", fullrange = TRUE) + 
-    facet_wrap(~c(flow)) +# Trend lines
-  labs(
-    title = "Digitally deliverable trade and internet coverage",
-    x = "Internet coverage, % of households",
-    y = "Digitally deriverable trade, millions of USD",
-    color = "Internet Reporter"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5),  # Center title
-    legend.position = "bottom"
-  )
-
-# Display the plot
-print(plot)
-```
-
 ## 2. Description of datasets in the project
+
+The analysis relies on 4 publicly available datasets, find below a brief description of each of these datasets.
 
 ```{r}
 source <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_BOP@DF_TIS,1.0?format=csv"
@@ -134,7 +111,7 @@ if (!file.exists(here(local_dir, local_name))) {
 
 #### International trade in services - OECD
 
-This dataset compiles detailed balance of payments data on international trade in services by partner country. According to the OECD, trade in services records the value of services exchanged between residents and non-residents of an economy, including services provided through foreign affiliates established abroad. Services include transport (both freight and passengers), travel, communications services (postal, telephone, satellite, etc.), construction services, insurance and financial services, computer and information services, royalties and license fees, other business services, cultural and recreational services, and government services not included in the list above.
+This dataset compiles detailed balance of payments data on international trade in services by partner country. According to the OECD, trade in services records the value of services exchanged between residents and non-residents of an economy, including services provided through foreign affiliates established abroad. Services include transport (both freight and passengers), travel, communications services (postal, telephone, satellite, etc.), construction services, insurance and financial services, computer and information services, royalties and license fees, other business services, cultural and recreational services, and government services.
 
 #### GDP per capita - Eurostat
 
@@ -186,7 +163,127 @@ summary_table <- do.call (rbind, summary_list)
 gt(summary_table) |> tab_header(title = "Table 1. Datasets used in this report")
 ```
 
-## 3. Results and discussion
+## 3. Data analysis
+
+### What do the data say? A visual exploration
+
+**Figure 1** illustrates the relationship between digitally deliverable trade within EU countries and internet coverage. The graph shows exports and imports, considering both the internet coverage of the reporting countries and their trade partners. This visualization allows for the exploration of whether digitally deliverable trade is more strongly influenced by a country's own connectivity or that of its trading partners. The figure aggregates trade values by reporter, year and flow, correlating them with two measures: internet coverage in the reporting country and a trade value-weighted average of internet coverage in partner countries.
+
+The visualization suggests a relationship between the variables under study: higher levels of internet coverage are associated with greater digitally deliverable trade, both in exports and imports. However, while the graph reveals this positive relationship, it does not indicate whether the internet coverage of the reporting country or that of its trade partners plays a more significant role.
+
+```{r}
+local_name <- "processed.csv"
+local_dir <- "raw_data"
+
+trade_data <- vroom(here(local_dir, local_name))
+
+trade_data$non_digital <- trade_data$total_services - trade_data$digital_value
+
+trade_data <- trade_data |> filter(digital_value >= 1)
+trade_data <- trade_data |> filter(total_services >= 1)
+trade_data <- trade_data |> filter(non_digital >= 1)
+
+trade_data <- trade_data |> mutate(flow = ifelse(flow == "C", "Exports","Imports"))
+
+figure1 <- trade_data |> summarise(digital = sum(digital_value), internet = weighted.mean(internet_reporter,digital_value), .by = c(reporter,year,flow)) |> mutate(Category = "Internet coverage in reporter")
+
+figure1_ <- trade_data |> summarise(digital = sum(digital_value), internet = weighted.mean(internet_partner,digital_value), .by = c(reporter,year,flow)) |> mutate(Category = "Internet coverage in partner")
+
+figure1 <- rbind(figure1,figure1_)
+
+plot1 <- ggplot(figure1, aes(x = internet, y = digital)) +
+  geom_point(alpha = 0.3) +  # Scatter points
+  geom_smooth(method = "lm", se = T, fullrange = T) + 
+  facet_grid(flow~Category, scales = "free") +
+  labs(
+    title = "Figure 1. Digitally deliverable trade and internet coverage",
+    subtitle = "Trade between EU member states 2013-2022",
+    x = "% of households",
+    y = "Trade value, millions of USD", 
+    caption = "Source: Own elaboration with data from Eurostat and OECD. (2024)."
+  ) +
+  theme_bw() +
+  theme(legend.position = "none")
+
+# Display the plot
+print(plot1)
+```
+
+### Econometric analysis: a gravity model
+
+#### **Poisson Pseudo Maximum Likelihood (PPML)**
+
+PPML (Poisson Pseudo-Maximum Likelihood) is an estimation method employed for gravity models within the framework of generalized linear models (GLMs). It is estimated using a GLM with a quasipoisson distribution and a log-link function. The PPML approach was introduced by Silva and Tenreyro (2006). The model applied in this research is inspired by the gravity model proposed by Liberatore and Wettstein (2021), which analyzes bilateral trade in services on a global scale. This model includes different specifications based on the availability of regressor data. In this study, we estimate a single model, which is a modified version of what Liberatore and Wettstein (2021) refer to as their "full model." A key innovation in our approach is the inclusion of internet coverage in both the reporting and partner countries as an explanatory variable. The model is specified as follows:
+
+\begin{align}
+\text{digital\_trade}_{ijt} &= \beta_0 + \beta_1 \text{gdp\_pc}_{it} + \beta_2 \text{gdp\_pc}_{jt} + \beta_3 \text{distance}_{ij} \nonumber \\
+&\quad + \beta_4 \text{contiguity}_{ij} + \beta_5 \text{common\_language}_{ij} + \beta_6 \text{total\_serv}_{ijt} \nonumber \\
+&\quad + \beta_7 \text{factor(year)}_t + \beta_8 \text{factor(partner)} + \beta_9 \text{internet\_coverage}_{it} \nonumber \\
+&\quad + \beta_{10} \text{internet\_coverage}_{jt} + \epsilon \nonumber
+\end{align}
+
+-   `digital_trade_ijt`: Bilateral digitally deliverable trade between country i and j in year t
+
+-   `gdp_pc_it`: GDP per capita of country i in year t
+
+-   `gdp_pc_jt`: GDP per capita of country j in year t
+
+-   `distance`stance between countries i and j in year t
+
+-   `contiguity_ij`: 1 if countries i and j are neighboring countries
+
+-   `common_language_ij`: 1 if countries i and j share a common language
+
+-   `total_serv_ijt`: Total trade in services between countries i in year t
+
+-   `internet_coverage_it`: Internet coverage in country i in year t
+
+-   `internet_coverage_jt`: Internet coverage in country j in year t
+
+-   `factor(year_t)`: Fixed effects of year t
+
+-   `factor(partner)`: Fixed effects of country j
+
+-   `\epsilon_ij`: Error term
+
+```{r}
+trade_data$year <- as.factor(trade_data$year)
+trade_data$partner <- as.factor(trade_data$partner)
+
+exports <- trade_data |> filter(flow == "Exports")
+
+imports <- trade_data |> filter(flow == "Imports")
+
+models <- list(
+  "Exports" = glm(log(digital_value) ~ log(gdppc_reporter) + log(gdppc_partner) + dist + contig +
+               comlang_ethno + log(total_services) + log(internet_reporter) + 
+               log(internet_partner) + year + partner,
+             data = exports, 
+             family = quasipoisson()),
+  
+  "Imports" = glm(log(digital_value) ~ log(gdppc_reporter) + log(gdppc_partner) + dist + contig + 
+               comlang_ethno + log(total_services) + log(internet_reporter)  + 
+               log(internet_partner) + year,
+             data =  imports, 
+             family = quasipoisson())
+  
+)
+
+modelsummary(models,
+             shape = term ~ model + statistic,
+             stars = T,
+             coef_omit = 10:44,
+             coef_rename = c("log(gdppc_reporter)" = "GDP per capita: reporter", 
+                             "log(gdppc_partner)" = "GDP per capita: partner",
+                             "dist" = "Distance",
+                             "contig" = "Contiguity", 
+                             "comlang_ethno" = "Common language", 
+                             "log(total_services)" = "Total services traded",
+                             "log(internet_reporter)" = "Internet coverage: reporter",
+                             "log(internet_partner)" = "Internet coverage: partner"),
+              title = 'Table 2.Results of PPML regressions')
+
+```
 
 ## 4. Conclusion
 
