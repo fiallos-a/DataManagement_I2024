@@ -121,19 +121,19 @@ if (!file.exists(here(local_dir, local_name))) {
 }
 ```
 
-#### International trade in services - OECD
+#### [International trade in services](https://data-explorer.oecd.org/vis?fs%5B0%5D=T%2Co&pg=0&fc=Topic&snb=4&vw=ov&df%5Bds%5D=dsDisseminateFinalDMZ&df%5Bid%5D=DSD_BOP%2540DF_TIS&df%5Bag%5D=OECD.SDD.TPS&df%5Bvs%5D=1.0&dq=AUS..S.B..A.USD_EXC.&pd=2%2C0%2C0%2C9%2C%25%2C2%2CC&to%5BTIME_PERIOD%5D=false) - OECD (2024)
 
 This dataset compiles detailed balance of payments data on international trade in services by partner country. According to the OECD, trade in services records the value of services exchanged between residents and non-residents of an economy, including services provided through foreign affiliates established abroad. Services include transport (both freight and passengers), travel, communications services (postal, telephone, satellite, etc.), construction services, insurance and financial services, computer and information services, royalties and license fees, other business services, cultural and recreational services, and government services.
 
-#### GDP per capita - Eurostat
+#### [GDP per capita](https://ec.europa.eu/eurostat/databrowser/view/tec00001/default/table?lang=en) - Eurostat (2024)
 
 The Eurostat GDP per capita dataset is a comprehensive resource for analyzing economic performance and regional disparities across Europe. It provides GDP per capita values in purchasing power standards (PPS) or Euros, adjusted for inflation and purchasing power parity. The dataset spans multiple decades and includes granular data at national and regional levels. Key features include time-series data, standardized under ESA 2010, ensuring comparability across countries and regions. This dataset is ideal for exploratory data analysis, trend forecasting, and modeling economic inequality or growth. Variables include region/country identifiers, observation years, and GDP per capita metrics in current and constant prices.
 
-#### Internet coverage - Eurostat
+#### [Internet coverage](https://ec.europa.eu/eurostat/databrowser/view/isoc_cbs/default/table?lang=en) - Eurostat (2024)
 
 The Broadband Internet Coverage by Speed dataset from Eurostat tracks broadband accessibility across Europe, with data segmented by speed categories such as below 30 Mbps or above 100 Mbps. It highlights the percentage of households or populations covered by broadband services, offering insights at both national and regional levels over several years. The dataset is crucial for evaluating the progress of digital infrastructure, pinpointing disparities in internet access, and shaping strategies for improving connectivity. Key fields include geographic identifiers, year, and broadband coverage metrics by speed.
 
-#### Gravity database - CEPII
+#### [Gravity database](https://www.cepii.fr/CEPII/en/publications/wp/abstract.asp?NoDoc=13432) - CEPII (2022)
 
 The CEPII Gravity database provides, for any pair of countries, from 1948 to 2020, all the information required to estimate gravity equations. Each observation corresponds to a combination of an exporting country, an importing country and a year for which the CEPII provides trade flows, as well as geographic, cultural, trade facilitation and macroeconomic variables. Gravity is the main dataset, which contains the core information. Within the dataset, countries are referred to using the variable country_id, which combines a country’s alphabetic ISO3 code with a number identifying potential territorial transformations of the country.
 
@@ -179,9 +179,11 @@ kable(summary_table, caption = "Table 1: Datasets used in this report")
 
 ### What do the data say? A visual exploration
 
-**Figure 1** illustrates the relationship between digitally deliverable trade within EU countries and internet coverage. The graph shows exports and imports, considering both the internet coverage of the reporting countries and their trade partners. This visualization allows for the exploration of whether digitally deliverable trade is more strongly influenced by a country's own connectivity or that of its trading partners. The figure aggregates trade values by reporter, year and flow, correlating them with two measures: internet coverage in the reporting country and a trade value-weighted average of internet coverage in partner countries.
+#### Evolution of digitally deliverable services
 
-The visualization suggests a relationship between the variables under study: higher levels of internet coverage are associated with greater digitally deliverable trade, both in exports and imports. However, while the graph reveals this positive relationship, it does not indicate whether the internet coverage of the reporting country or that of its trade partners plays a more significant role.
+Trade in digitally deliverable services has grown at a significantly faster pace compared to non-digitally deliverable services. At the global level, during the period from 2005 to 2021, digitally deliverable services experienced an average annual growth rate of 7.7%, substantially outpacing the 3.9% growth rate recorded for non-digitally deliverable services (Fiallos and Liberatore, 2023).
+
+**Figure 1** illustrates the contrasting evolution of these two types of services within the European Union (EU). The data highlights a particularly pronounced surge in the trade value of digitally deliverable services during 2020 and 2021, a period marked by the COVID-19 pandemic, which accelerated the adoption of digital tools and remote work practices. This growth enabled digitally deliverable services to outgrow non-digitally deliverable services in terms of trade value. By 2022, the exports of digitally deliverable services within the EU had surpassed those of non-digitally deliverable services.
 
 ```{r}
 local_name <- "processed.csv"
@@ -197,6 +199,147 @@ trade_data <- trade_data |> filter(non_digital >= 1)
 
 trade_data <- trade_data |> mutate(flow = ifelse(flow == "C", "Exports","Imports"))
 
+
+figure1_1 <- trade_data |> 
+  group_by(flow,year) |>
+  summarise(value = sum(digital_value, na.rm =  T)) |>
+  mutate(category = "Digitally deliverable services") |>
+  ungroup()
+
+
+figure1_2 <- trade_data
+
+figure1_2$non_digital <- figure1_2$total_services - figure1_2$digital_value
+
+figure1_2 <- figure1_2 |> 
+  group_by(flow,year) |>
+  summarise(value = sum(non_digital, na.rm =  T)) |>
+  mutate(category = "Non-digitally deliverable services") |>
+   ungroup()
+
+figure_1 <- rbind(figure1_1,figure1_2)
+
+ggplot(figure_1, aes(x = year, y = value, color = category)) +
+  facet_grid(~flow, labeller = labeller(flow = c("C" = "Exports", "D" = "Imports"))) + 
+  geom_line(linewidth =1.1) +              
+  geom_point() +             
+  labs(
+    x = "Year", 
+    y = "Trade value, millions of USD", 
+    title = "Figure 1: Trade value by digitally deliverable and non-digitally deliverable services", 
+    subtitle = "Intra EU trade from 2013 to 2022",
+    color = "Category",
+    caption = "Source: Own elaboration with data from OECD. (2024)."
+  ) +
+  scale_x_continuous(breaks = seq(min(figure_1$year), max(figure_1$year))) + 
+  scale_y_continuous(labels = scales::comma)+ 
+  theme_bw() +         
+  theme(
+    legend.position = "top", 
+    strip.text = element_text(size = 10),  
+    panel.spacing = unit(1, "lines"),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 9),  
+    axis.text = element_text(size = 7), 
+    legend.text = element_text(size = 10),  
+    plot.title = element_text(size = 11),
+    plot.subtitle = element_text(size = 10))
+
+```
+
+#### Evolution of internet coverage in the EU
+
+There has been a significant increase in internet connectivity and speeds across the EU. Private household internet coverage with speeds exceeding 100 Mbps rose from 45.5% in 2013 to 88.1% in 2023 (EUROSTAT, 2024). **Figure 2** illustrates the evolution of high-speed internet coverage in private households over this period, highlighting a growth of more than 40 percentage points in the EU average within 10 years.The graph contrasts the EU average with individual country data, showing that by 2023 all member states achieved coverage rates above 60%.
+
+```{r}
+eu_iso2 <- c("AT","BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", 
+          "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", 
+          "PT", "RO", "SK", "SI", "ES", "SE")
+
+internet_eu <- internet_eu |> filter(geo %in% eu_iso2,
+                           inet_spd == "MBPS_GT100",
+                          TIME_PERIOD %in% c(2013:2023)) |>
+  select(geo,TIME_PERIOD,values) |>
+  rename(year = TIME_PERIOD)
+
+figure_2_1 <- internet_eu |> 
+  group_by(year) |>
+  summarise(value = mean(values)) |>
+  mutate(category = "EU average",
+         geo = "EU") |>
+  ungroup()
+
+figure_2_2 <- internet_eu |> 
+  group_by(geo,year) |>
+  summarise(value = mean(values)) |>
+  mutate(category = "EU member states") |>
+  ungroup()
+
+figure_2 <- rbind(figure_2_1,figure_2_2)
+
+ggplot(figure_2, aes(x = year, y = value, group = geo)) +
+  geom_line(aes(color = ifelse(category == "EU member states", "EU member states", "EU average"),
+                size = ifelse(category == "EU member states", "EU member states", "EU average")), 
+              show.legend = T) +  
+  scale_color_manual(values = c("EU member states" = "gray","EU average"= "red")) +
+scale_size_manual(values= c("EU member states" = 0.5,"EU average"= 1))+  
+  labs(
+    x = "Year", 
+    y = "Households, %", 
+    title = "Figure 2: Evolution of internet coverage in EU member states from 2013-2023",
+    subtitle = "Percentage of households with internet connection faster than 100 Mbps",
+    caption = "Source: Own elaboration with data from Eurostat and OECD. (2024).") +
+  scale_x_continuous(breaks = seq(min(figure_2$year), max(figure_2$year), 1)) +  
+  theme_bw() +   
+  theme(
+    legend.position = "top", 
+    panel.grid.minor = element_blank(),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 8),  
+    axis.text = element_text(size = 8), 
+    legend.text = element_text(size = 8),  
+    plot.title = element_text(size = 9),
+    plot.subtitle = element_text(size = 8))
+
+```
+
+**Figure 3** further examines the state of internet coverage by EU member countries in 2023. Malta, the Netherlands, and Denmark achieved the highest coverage in the union, while Greece, Hungary, and Latvia reported the lowest, although still above the 60% threshold.
+
+```{r}
+figure_2 <- figure_2  |> filter(year == 2023)
+
+figure_2$color <- ifelse(figure_2$geo == "EU", "red", "grey")
+
+# Create the bar plot
+ggplot(figure_2, aes(x = reorder(geo, -value), y = value, fill = color)) +
+  geom_bar(stat = "identity") +
+  scale_fill_identity() +
+  labs(x = "Country", 
+    y = "Households, %", 
+    title = "Figure 3: Internet coverage in EU member states in 2023",
+    subtitle = "Percentage of households with internet connection faster than 100 Mbps",
+    caption = "Source: Own elaboration with data from Eurostat. (2024).") +
+  theme_bw() +   
+  theme(
+    legend.position = "top", 
+    panel.grid.minor = element_blank(),
+    legend.title = element_blank(),
+    axis.title = element_text(size = 8),  
+    axis.text = element_text(size = 7), 
+    legend.text = element_text(size = 8),  
+    plot.title = element_text(size = 9),
+    plot.subtitle = element_text(size = 8))
+
+```
+
+#### Digitally deliverable trade and internet coverage
+
+**Figure 4** illustrates the relationship between digitally deliverable trade within EU countries and internet coverage. The graph shows exports and imports, considering both the internet coverage of the reporting countries and their trade partners. This visualization allows for the exploration of whether digitally deliverable trade is more strongly influenced by a country's own connectivity or that of its trading partners. The figure aggregates trade values by reporter, year and flow, correlating them with two measures: internet coverage in the reporting country and a trade value-weighted average of internet coverage in partner countries.
+
+The visualization suggests a relationship between the variables under study: higher levels of internet coverage are associated with greater digitally deliverable trade, both in exports and imports. However, while the graph reveals this positive relationship, it does not indicate whether the internet coverage of the reporting country or that of its trade partners plays a more significant role.
+
+```{r}
+
 figure1 <- trade_data |> summarise(digital = sum(digital_value), internet = weighted.mean(internet_reporter,digital_value), .by = c(reporter,year,flow)) |> mutate(Category = "Internet coverage in reporter")
 
 figure1_ <- trade_data |> summarise(digital = sum(digital_value), internet = weighted.mean(internet_partner,digital_value), .by = c(reporter,year,flow)) |> mutate(Category = "Internet coverage in partner")
@@ -208,7 +351,7 @@ plot1 <- ggplot(figure1, aes(x = internet, y = digital)) +
   geom_smooth(method = "lm", se = T, fullrange = T) + 
   facet_grid(flow~Category, scales = "free") +
   labs(
-    title = "Figure 1. Digitally deliverable trade and internet coverage",
+    title = "Figure 4: Digitally deliverable trade and internet coverage",
     subtitle = "Trade between EU member states 2013-2022",
     x = "% of households",
     y = "Trade value, millions of USD", 
@@ -216,11 +359,11 @@ plot1 <- ggplot(figure1, aes(x = internet, y = digital)) +
   ) +
   theme_bw() +
   theme(legend.position = "none",
-        axis.title = element_text(size = 10),  
-        axis.text = element_text(size = 9), 
-        legend.text = element_text(size = 9),  
-        plot.title = element_text(size = 11), 
-        plot.subtitle = element_text(size = 10) )
+        axis.title = element_text(size = 8),  
+        axis.text = element_text(size = 8), 
+        legend.text = element_text(size = 8),  
+        plot.title = element_text(size = 9), 
+        plot.subtitle = element_text(size = 8))
 
 # Display the plot
 print(plot1)
@@ -230,7 +373,7 @@ print(plot1)
 
 This study applies a model inspired by the gravity model developed by Liberatore and Wettstein (2021), which examines global bilateral trade in services. Liberatore and Wettstein employed various specifications of a base model depending on the availability of regressor data. In contrast, our research focuses on estimating a single model, which is a modified version of what they termed their "full model."
 
-A notable innovation in our approach is the inclusion of internet coverage as an explanatory variable for both the reporting and partner countries. The model specification is as follows:
+A notable innovation in our approach is the inclusion of internet coverage as an explanatory variable for both the reporting and partner countries, which is meant to capture the impact of internet coverage in digitally deliverable services trade. The model specification is as follows:
 
 \begin{align}
 \textbf{digital\_trade}_{ijt} &= \beta_0 + \beta_1 \textbf{gdp\_pc}_{it} + \beta_2 \textbf{gdp\_pc}_{jt} + \beta_3 \textbf{distance}_{ij} \nonumber \\
@@ -252,10 +395,9 @@ where each of the variables is defined as:
     \item \textbf{internet\_coverage}$_{it}$: Internet coverage in reporting country $i$ in year $t$.
     \item \textbf{internet\_coverage}$_{jt}$: Internet coverage in partner country $j$ in year $t$.
     \item \textbf{factor(year)}$_{t}$: Fixed effects of year $t$.
-    \item \textbf{factor(partner)}: Fixed effects of partner country $j$.
+    \item \textbf{factor(partner)}: Fixed effects of partner country.
     \item \textbf{$\epsilon$}: Error term.
 \end{itemize}
-
 
 #### **Poisson Pseudo Maximum Likelihood (PPML)**
 
@@ -320,3 +462,18 @@ These findings underscore the growing significance of internet infrastructure in
 In conclusion, this research contributes to the understanding of the role of internet connectivity in fostering trade in services within the EU. It also paves the way for future studies to explore deeper relationships between internet infrastructure and specific sectors of digitally deliverable services, potentially guiding policies aimed at strengthening digital trade within and beyond the EU.
 
 ### References
+
+Maddalena Conte & Pierre Cotterlaz & Thierry Mayer, 2022. "[The CEPII Gravity Database](https://ideas.repec.org/p/cii/cepidt/2022-05.html)," [Working Papers](https://ideas.repec.org/s/cii/cepidt.html) 2022-05, CEPII research center.
+
+Eurostat, the statistical office of the European Union. (2024). "[Gross domestic product at market prices](https://ec.europa.eu/eurostat/databrowser/view/tec00001/default/table?lang=en)". Unit C2 - National Accounts - production
+
+Eurostat, the statistical office of the European Union. (2024). "[Broadband internet coverage by speed](https://ec.europa.eu/eurostat/databrowser/view/isoc_cbs/default/table?lang=en)". G4: Innovation and digitalisation
+
+OECD. (2024). "[International trade in services](https://data-explorer.oecd.org/vis?fs%5B0%5D=T%2Co&pg=0&fc=Topic&snb=4&vw=ov&df%5Bds%5D=dsDisseminateFinalDMZ&df%5Bid%5D=DSD_BOP%2540DF_TIS&df%5Bag%5D=OECD.SDD.TPS&df%5Bvs%5D=1.0&dq=AUS..S.B..A.USD_EXC.&pd=2%2C0%2C0%2C9%2C%25%2C2%2CC&to%5BTIME_PERIOD%5D=false)". Statistics and Data Directorate (SDD).
+
+Fiallos, A. and Liberatore, A. (2023) "[Decoding global services trade: The power of the OECD-WTO BaTIS dataset](https://oecdstatistics.blog/2023/05/03/decoding-global-services-trade-the-power-of-the-oecd-wto-batis-dataset/)”, OECD Statistics Blog, Paris.
+
+Liberatore, A. and Wettstein S. (2021) "[The OECD-WTO Balanced Trade In Services (BaTIS)](https://www.wto.org/english/res_e/statis_e/daily_update_e/oecd-wto_batis_methodology_bpm6.pdf)", OECD and WTO.
+
+J. M. C. Santos Silva, Silvana Tenreyro; The Log of Gravity. *The Review of Economics and Statistics* 2006; 88 (4): 641–658. doi: <https://doi.org/10.1162/rest.88.4.641>
+
