@@ -510,6 +510,7 @@ modelsummary(models,
              #shape = term ~ model + statistic,
              stars = T,
              coef_omit = 10:44,
+             output = "kableExtra",
              coef_rename = c("log(gdppc_reporter)" = "GDP per capita: reporter", 
                              "log(gdppc_partner)" = "GDP per capita: partner",
                              "dist" = "Distance",
@@ -518,7 +519,8 @@ modelsummary(models,
                              "log(total_services)" = "Total services traded",
                              "log(internet_reporter)" = "Internet coverage: reporter",
                              "log(internet_partner)" = "Internet coverage: partner"),
-             title = 'Results of PPML Regressions by Region')
+             title = 'Results of PPML Regressions by Region') %>%
+  kableExtra::kable_styling(latex_options = c("striped","scale_down"))
 ```
 
 The separate regressions for Eastern and Western Europe confirm a significant relationship between the trade value of digitally deliverable services and internet coverage in the partner country for both imports and exports involving Eastern European countries. Specifically, the estimated coefficient indicates that a 1% increase in the internet coverage of a partner country leads to a 0.034% increase in digitally deliverable exports from Eastern Europe, and to a 0.054% increase in parallel for imports.
