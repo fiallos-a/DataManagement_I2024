@@ -412,7 +412,7 @@ where each of the variables is defined as:
 
 The Poisson Pseudo-Maximum Likelihood (PPML) estimation method is widely used for gravity models within the framework of generalized linear models (GLMs). It involves estimation through a GLM with a quasipoisson distribution and a log-link function. Originally introduced by Silva and Tenreyro (2006), PPML has become a standard method for analyzing trade flows.
 
-In this study, the proposed econometric specification is estimated using the PPML method. The data is divided into exports and imports, and two separate regressions are estimated, one for each flow. The results are summarized in Table 2. Note that, for relevance, the fixed effects for year and partner countries are not included in the table.
+In this study, the proposed econometric specification is estimated using the PPML method. The data is divided into exports and imports, and two separate regressions are estimated, one for each flow. The results are summarized in **Table 2**. Note that, for relevance, the fixed effects for year and partner countries are not included in the table.
 
 ```{r, fig.pos = "b"}
 trade_data$year <- as.factor(trade_data$year)
@@ -465,7 +465,7 @@ In contrast, for imports, internet coverage in partner countries seems to have a
 
 ## 4. Robustness testing
 
-To ensure that our results are not sensitive to the choice of data subsets, we apply the same PPML method separately to Eastern and Western Europe. For this analysis, Eastern Europe includes Bulgaria, Hungary, Croatia, the Czech Republic, Estonia, Latvia, Lithuania, Poland, Romania, Slovakia, and Slovenia. All other countries are classified as part of Western Europe. The data remains divided into imports and exports but is further segmented by Eastern and Western regions. This distinction is based on the reporter country for each trade flow. The results are displayed in Table 3. 
+To ensure that our results are not sensitive to the choice of data subsets, we apply the same PPML method separately to Eastern and Western Europe. For this analysis, Eastern Europe includes Bulgaria, Hungary, Croatia, the Czech Republic, Estonia, Latvia, Lithuania, Poland, Romania, Slovakia, and Slovenia. All other countries are classified as part of Western Europe. The data remains divided into imports and exports but is further segmented by Eastern and Western regions. This distinction is based on the reporter country for each trade flow. The results are displayed in **Table 3**.
 
 ```{r}
 trade_data <- trade_data %>%
