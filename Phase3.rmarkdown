@@ -40,6 +40,8 @@ library(dplyr)
 library(magrittr)
 ```
 
+
+
 ## 1. Research question
 
 This research report corresponds to a first attempt to explore the **relationship between internet connectivity and digitally deliverable trade in services among the 27 member countries of the European Union (EU)**. The research seeks to assess how enhanced digital infrastructure within the EU has influenced the volume of digitally deliverable services exchanged among member states, providing insights into the evolving landscape of digital trade in an interconnected Europe.
@@ -53,6 +55,8 @@ The study relies on international services trade data, aligning with the framewo
 ## 2. Description of datasets in the project
 
 The analysis relies on 4 publicly available datasets, find below a brief description of each of these datasets.
+
+
 
 ```{r}
 source <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_BOP@DF_TIS,1.0?format=csv"
@@ -128,6 +132,8 @@ if (!file.exists(here(local_dir, local_name))) {
 }
 ```
 
+
+
 #### [International trade in services](https://data-explorer.oecd.org/vis?fs%5B0%5D=T%2Co&pg=0&fc=Topic&snb=4&vw=ov&df%5Bds%5D=dsDisseminateFinalDMZ&df%5Bid%5D=DSD_BOP%2540DF_TIS&df%5Bag%5D=OECD.SDD.TPS&df%5Bvs%5D=1.0&dq=AUS..S.B..A.USD_EXC.&pd=2%2C0%2C0%2C9%2C%25%2C2%2CC&to%5BTIME_PERIOD%5D=false) - OECD (2024)
 
 This dataset compiles detailed balance of payments data on international trade in services by partner country. According to the OECD, trade in services records the value of services exchanged between residents and non-residents of an economy, including services provided through foreign affiliates established abroad. Services include transport (both freight and passengers), travel, communications services (postal, telephone, satellite, etc.), construction services, insurance and financial services, computer and information services, royalties and license fees, other business services, cultural and recreational services, and government services.
@@ -143,6 +149,8 @@ The Broadband Internet Coverage by Speed dataset from Eurostat tracks broadband 
 #### [Gravity database](https://www.cepii.fr/CEPII/en/publications/wp/abstract.asp?NoDoc=13432) - CEPII (2022)
 
 The CEPII Gravity database provides, for any pair of countries, from 1948 to 2020, all the information required to estimate gravity equations. Each observation corresponds to a combination of an exporting country, an importing country and a year for which the CEPII provides trade flows, as well as geographic, cultural, trade facilitation and macroeconomic variables. Gravity is the main dataset, which contains the core information. Within the dataset, countries are referred to using the variable country_id, which combines a country’s alphabetic ISO3 code with a number identifying potential territorial transformations of the country.
+
+
 
 ```{r}
 data_sets <- list(
@@ -182,6 +190,8 @@ summary_table <- do.call (rbind, summary_list)
 kable(summary_table, caption = "Table 1: Datasets used in this report")
 ```
 
+
+
 ## 3. Data analysis
 
 ### What do the data say? A visual exploration
@@ -191,6 +201,8 @@ kable(summary_table, caption = "Table 1: Datasets used in this report")
 Trade in digitally deliverable services has grown at a significantly faster pace compared to non-digitally deliverable services. At the global level, during the period from 2005 to 2021, digitally deliverable services experienced an average annual growth rate of 7.7%, substantially outpacing the 3.9% growth rate recorded for non-digitally deliverable services (Fiallos and Liberatore, 2023).
 
 **Figure 1** illustrates the contrasting evolution of these two types of services within the European Union (EU). The data highlights a particularly pronounced surge in the trade value of digitally deliverable services during 2020 and 2021, a period marked by the COVID-19 pandemic, which accelerated the adoption of digital tools and remote work practices. This growth enabled digitally deliverable services to outgrow non-digitally deliverable services in terms of trade value. By 2022, the exports of digitally deliverable services within the EU had surpassed those of non-digitally deliverable services.
+
+
 
 ```{r}
 local_name <- "processed.csv"
@@ -254,9 +266,13 @@ ggplot(figure_1, aes(x = year, y = value, color = category)) +
 
 ```
 
+
+
 #### Evolution of internet coverage in the EU
 
 There has been a significant increase in internet connectivity and speeds across the EU. Private household internet coverage with speeds exceeding 100 Mbps rose from 45.5% in 2013 to 88.1% in 2023 (EUROSTAT, 2024). **Figure 2** illustrates the evolution of high-speed internet coverage in private households over this period, highlighting a growth of more than 40 percentage points in the EU average within 10 years.The graph contrasts the EU average with individual country data, showing that by 2023 all member states achieved coverage rates above 60%.
+
+
 
 ```{r}
 eu_iso2 <- c("AT","BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", 
@@ -310,7 +326,11 @@ scale_size_manual(values= c("EU member states" = 0.5,"EU average"= 1))+
 
 ```
 
+
+
 **Figure 3** further examines the state of internet coverage by EU member countries in 2023. Malta, the Netherlands, and Denmark achieved the highest coverage in the union, while Greece, Hungary, and Latvia reported the lowest, although still above the 60% threshold.
+
+
 
 ```{r}
 figure_2 <- figure_2  |> filter(year == 2023)
@@ -339,11 +359,15 @@ ggplot(figure_2, aes(x = reorder(geo, -value), y = value, fill = color)) +
 
 ```
 
+
+
 #### Digitally deliverable trade and internet coverage
 
 **Figure 4** illustrates the relationship between digitally deliverable trade within EU countries and internet coverage. The graph shows exports and imports, considering both the internet coverage of the reporting countries and their trade partners. This visualization allows for the exploration of whether digitally deliverable trade is more strongly influenced by a country's own connectivity or that of its trading partners. The figure aggregates trade values by reporter, year and flow, correlating them with two measures: internet coverage in the reporting country and a trade value-weighted average of internet coverage in partner countries.
 
 The visualization suggests a relationship between the variables under study: higher levels of internet coverage are associated with greater digitally deliverable trade, both in exports and imports. However, while the graph reveals this positive relationship, it does not indicate whether the internet coverage of the reporting country or that of its trade partners plays a more significant role.
+
+
 
 ```{r}
 
@@ -375,6 +399,8 @@ plot1 <- ggplot(figure1, aes(x = internet, y = digital)) +
 # Display the plot
 print(plot1)
 ```
+
+
 
 ### Econometric analysis: a gravity model
 
@@ -411,6 +437,8 @@ where each of the variables is defined as:
 The Poisson Pseudo-Maximum Likelihood (PPML) estimation method is widely used for gravity models within the framework of generalized linear models (GLMs). It involves estimation through a GLM with a quasipoisson distribution and a log-link function. Originally introduced by Silva and Tenreyro (2006), PPML has become a standard method for analyzing trade flows.
 
 In this study, the proposed econometric specification is estimated using the PPML method. The data is divided into exports and imports, and two separate regressions are estimated, one for each flow. The results are summarized in Table 2. Note that, for relevance, the fixed effects for year and partner countries are not included in the table.
+
+
 
 ```{r, fig.pos = "b"}
 trade_data$year <- as.factor(trade_data$year)
@@ -452,6 +480,8 @@ modelsummary(models,
 
 ```
 
+
+
 ### Results
 
 The estimated coefficients indicate a positive and statistically significant relationship between the trade value of digitally deliverable services and internet coverage in both the reporting and partner countries, for both export and import flows within EU countries between 2013 and 2022, under the proposed model specification. For exports, the internet coverage in the reporting country appears to have a slightly stronger influence than in the partner country (estimated coefficients of 0.030 versus 0.011). This suggests that the availability of reliable and widespread internet infrastructure in the exporting country plays a crucial role in facilitating digitally deliverable trade.
@@ -459,6 +489,8 @@ The estimated coefficients indicate a positive and statistically significant rel
 In contrast, for imports, internet coverage in partner countries seems to have a slightly greater influence than in the reporting country (estimated coefficients of 0.031 versus 0.019). This could indicate that the ability of a country to access and consume digitally deliverable services is more dependent on the internet infrastructure of the partner country, rather than that of the reporting country. Nevertheless, the internet coverage in the reporting country remains an explanatory factor.
 
 ## 4. Robustness testing
+
+
 
 ```{r}
 colnames(trade_data)
@@ -503,8 +535,8 @@ models <- list(
 )
 
 modelsummary(models,
-             #shape = term ~ model + statistic,
-             stars = T,
+             shape = term ~ model + statistic,
+             stars = TRUE,
              coef_omit = 10:44,
              coef_rename = c("log(gdppc_reporter)" = "GDP per capita: reporter", 
                              "log(gdppc_partner)" = "GDP per capita: partner",
@@ -516,6 +548,8 @@ modelsummary(models,
                              "log(internet_partner)" = "Internet coverage: partner"),
              title = 'Results of PPML Regressions by Region')
 ```
+
+
 
 ## 5. Conclusion
 
@@ -542,3 +576,4 @@ Fiallos, A. and Liberatore, A. (2023) "[Decoding global services trade: The powe
 Liberatore, A. and Wettstein S. (2021) "[The OECD-WTO Balanced Trade In Services (BaTIS)](https://www.wto.org/english/res_e/statis_e/daily_update_e/oecd-wto_batis_methodology_bpm6.pdf)", OECD and WTO.
 
 J. M. C. Santos Silva, Silvana Tenreyro; The Log of Gravity. *The Review of Economics and Statistics* 2006; 88 (4): 641–658. doi: <https://doi.org/10.1162/rest.88.4.641>
+
