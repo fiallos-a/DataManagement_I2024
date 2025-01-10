@@ -22,6 +22,12 @@ include-before-body: |
         \textbf{Total Words: \TotalWords}
 ---
 
+```{r word_count, echo=FALSE}
+text <- readLines(knitr::current_input())
+word_count <- sum(strsplit(paste(text, collapse = " "), "\\s+")[[1]] != "")
+cat("Word Count:", word_count)
+```
+
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, out.extra = "", fig.pos = "h")
 
@@ -460,6 +466,8 @@ In contrast, for imports, internet coverage in partner countries seems to have a
 
 ## 4. Robustness testing
 
+To ensure that our results are not sensitive to the choice of data subsets, we apply the same PPML method separately to Eastern and Western Europe. For this analysis, Eastern Europe includes Bulgaria, Hungary, Croatia, the Czech Republic, Estonia, Latvia, Lithuania, Poland, Romania, Slovakia, and Slovenia. All other countries are classified as part of Western Europe. The data remains divided into imports and exports but is further segmented by Eastern and Western regions. This distinction is based on the reporter country for each trade flow.
+
 ```{r}
 trade_data <- trade_data %>%
   mutate(region = ifelse(reporter %in% c("BGR", "HRV", "CZE", "EST", "HUN", "LVA", "LTU", "POL", "ROM", "SVK", "SVN"),
@@ -516,7 +524,6 @@ modelsummary(models,
 The separate regressions for Eastern and Western Europe confirm a significant relationship between the trade value of digitally deliverable services and internet coverage in the partner country for both imports and exports involving Eastern European countries. Specifically, the estimated coefficient indicates that a 1% increase in the internet coverage of a partner country leads to a 0.034% increase in digitally deliverable exports from Eastern Europe, and to a 0.054% increase in parallel for imports.
 
 Overall, the findings highlight regional differences in the magnitude of key factors influencing trade. The coefficients for Eastern Europe tend to be smaller than those for Western Europe, reflecting potential disparities in digital infrastructure or trade capacity. For instance, in the global analysis of exports, the estimated coefficient for internet coverage in the reporting country is 0.030. This compares to 0.024 for exporting countries in Eastern Europe and 0.035 for those in Western Europe. Despite these smaller coefficients for Eastern Europe, the positive and statistically significant relationships remain consistent. These results underscore the critical role of internet connectivity in facilitating trade in digitally deliverable services, while also pointing to regional variations in the extent of this effect.
-
 
 ## 5. Conclusion
 
