@@ -17,12 +17,6 @@ format:
         \UseTblrLibrary{siunitx}
 ---
 
-```{r word_count, echo=FALSE}
-text <- readLines(knitr::current_input())
-word_count <- sum(strsplit(paste(text, collapse = " "), "\\s+")[[1]] != "")
-cat("Word Count:", word_count)
-```
-
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, out.extra = "", fig.pos = "h")
 
@@ -39,6 +33,13 @@ library(modelsummary)
 library(kableExtra)
 library(dplyr)
 library(magrittr)
+library(pdftools)
+```
+
+```{r word_count, echo=FALSE}
+text <- pdf_text("Phase3.pdf")
+word_count <- strsplit(text, "\\s+") %>% unlist() %>% length()
+cat("Wordcount =", word_count)
 ```
 
 ## 1. Research question
