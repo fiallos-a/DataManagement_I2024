@@ -461,10 +461,6 @@ In contrast, for imports, internet coverage in partner countries seems to have a
 ## 4. Robustness testing
 
 ```{r}
-colnames(trade_data)
-```
-
-```{r}
 trade_data <- trade_data %>%
   mutate(region = ifelse(reporter %in% c("BGR", "HRV", "CZE", "EST", "HUN", "LVA", "LTU", "POL", "ROM", "SVK", "SVN"),
 "Eastern Europe", "Western Europe"))
@@ -516,6 +512,11 @@ modelsummary(models,
                              "log(internet_partner)" = "Internet coverage: partner"),
              title = 'Results of PPML Regressions by Region')
 ```
+
+The separate regressions for Eastern and Western Europe confirm a significant relationship between the trade value of digitally deliverable services and internet coverage in the partner country for both imports and exports involving Eastern European countries. Specifically, the estimated coefficient indicates that a 1% increase in the internet coverage of a partner country leads to a 0.034% increase in digitally deliverable exports from Eastern Europe, and to a 0.054% increase in parallel for imports.
+
+Overall, the findings highlight regional differences in the magnitude of key factors influencing trade. The coefficients for Eastern Europe tend to be smaller than those for Western Europe, reflecting potential disparities in digital infrastructure or trade capacity. For example, in the global analysis of exports, the estimated coefficient for internet coverage in the reporting country is 0.030. This compares to 0.024 for exporting countries in Eastern Europe and 0.035 for those in Western Europe. Despite these smaller coefficients for Eastern Europe, the positive and statistically significant relationships remain consistent. These results underscore the critical role of internet connectivity in facilitating trade in digitally deliverable services, while also pointing to regional variations in the extent of this effect.
+
 
 ## 5. Conclusion
 
