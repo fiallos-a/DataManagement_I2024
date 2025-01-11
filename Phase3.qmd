@@ -39,7 +39,7 @@ library(pdftools)
 ```{r word_count, echo=FALSE}
 
 quarto_file <- "Phase3.qmd"
-file_content <- readLines(quarto_file)
+file_content <- readLines(here(quarto_file))
 
 exclude_code_chunks <- function(lines) {
   in_code_block <- FALSE
