@@ -37,14 +37,37 @@ library(pdftools)
 ```
 
 ```{r word_count, echo=FALSE}
-text <- pdf_text("Phase3.pdf")
-word_count <- strsplit(text, "\\s+") %>% unlist() %>% length()
-cat("Wordcount =", word_count)
+
+quarto_file <- "Phase3.qmd"
+file_content <- readLines(quarto_file)
+
+exclude_code_chunks <- function(lines) {
+  in_code_block <- FALSE
+  filtered_lines <- c()
+  
+  for (line in lines) {
+    if (startsWith(line, "```")) {
+      in_code_block <- !in_code_block
+    } else if (!in_code_block) {
+      filtered_lines <- c(filtered_lines, line)
+    }
+  }
+  
+  return(filtered_lines)
+}
+
+
+filtered_content <- exclude_code_chunks(file_content)
+text_content <- paste(filtered_content, collapse = " ")
+
+word_count <- strsplit(text_content, "\\s+") %>% unlist() %>% length()
+
+cat("                             Number of words: ", word_count)
 ```
 
 ## 1. Research question
 
-This research report corresponds to a first attempt to explore the **relationship between internet connectivity and digitally deliverable trade in services among the 27 member countries of the European Union (EU)**. The research seeks to assess how enhanced digital infrastructure within the EU has influenced the volume of digitally deliverable services exchanged among member states, providing insights into the evolving landscape of digital trade in an interconnected Europe.
+This report corresponds to a first attempt to explore the **relationship between internet connectivity and digitally deliverable trade in services among the 27 member countries of the European Union (EU)**. This research seeks to assess how enhanced digital infrastructure within the EU has influenced the volume of digitally deliverable services exchanged among member states, providing insights into the evolving landscape of digital trade in an interconnected Europe.
 
 The project is motivated by the significant increase in internet connectivity and speeds across the EU, where private household internet coverage (with speeds over 100 Mbps) rose from 45.5% in 2013 to 88.1% in 2023 (EUROSTAT, 2024). Additionally, Fiallos and Liberatore (2023) discuss that digitalization has significantly influenced trade in services, with technological advancements enabling the remote delivery of various service types. Between 2005 and 2021, globally, digitally deliverable services grew at an average annual rate of 7.7%, outpacing the 3.9% growth rate of non-digitally deliverable services (Fiallos, A. and Liberatore, A; 2023).
 
@@ -451,7 +474,7 @@ modelsummary(models,
                              "log(internet_reporter)" = "Internet coverage: reporter",
                              "log(internet_partner)" = "Internet coverage: partner"),
               title = 'Table 2: Results of PPML regressions',
-             notes = list("Significance levels: * p<0.05, ** p<0.01, *** p<0.001")) %>%
+             notes = list("Significance levels: + p<0.1, * p<0.05, ** p<0.01, *** p<0.001")) %>%
   kableExtra::kable_styling(latex_options = c("striped"))
 
 
@@ -465,7 +488,7 @@ In contrast, for imports, internet coverage in partner countries seems to have a
 
 ## 4. Robustness testing
 
-To ensure that our results are not sensitive to the choice of data subsets, we apply the same PPML method separately to Eastern and Western Europe. For this analysis, Eastern Europe includes Bulgaria, Hungary, Croatia, the Czech Republic, Estonia, Latvia, Lithuania, Poland, Romania, Slovakia, and Slovenia. All other countries are classified as part of Western Europe. The data remains divided into imports and exports but is further segmented by Eastern and Western regions. This distinction is based on the reporter country for each trade flow. The results are displayed in **Table 3**.
+To ensure that our results are not sensitive to the choice of data subsets, we apply the same PPML method separately to Eastern and Western Europe. For this analysis, Eastern Europe includes Bulgaria, Hungary, Croatia, the Czech Republic, Estonia, Latvia, Lithuania, Poland, Romania, Slovakia, and Slovenia. All other countries are classified as part of Western Europe. The data remains divided into imports and exports but is further segmented by Eastern and Western regions. This distinction is based on the reporter country for each trade flow. The results of the regressions are displayed in **Table 3**.
 
 ```{r}
 trade_data <- trade_data %>%
@@ -517,7 +540,7 @@ modelsummary(models,
                              "log(total_services)" = "Total services traded",
                              "log(internet_reporter)" = "Internet coverage: reporter",
                              "log(internet_partner)" = "Internet coverage: partner"),
-             title = 'Table 3: Results of PPML Regressions by region',
+             title = 'Table 3: Results of PPML regressions by region',
   notes = list("Standard errors in parentheses",
   "Significance levels: * p<0.05, ** p<0.01, *** p<0.001")) |>
   kableExtra::kable_styling(latex_options = c("striped", "scale_down", "HOLD_position"))
